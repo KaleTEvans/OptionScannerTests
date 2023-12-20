@@ -14,9 +14,12 @@
 #include <iomanip>
 #include <sstream>
 #include <unordered_map>
+#include <thread>
+#include <condition_variable>
+#include <chrono>
 
 #include "nanodbc/nanodbc.h"
-#include "../Logger.h"
+// #include "../Logger.h"
 
 using std::string;
 
@@ -46,8 +49,8 @@ namespace OptionDB {
 
             // Check if the connection is successful
             if (conn.connected()) {
-                //std::cout << "Connection to database established!" << std::endl;
-                OPTIONSCANNER_DEBUG("Connection to database established!");
+                std::cout << "Connection to database established!" << std::endl;
+                //OPTIONSCANNER_DEBUG("Connection to database established!");
 
                 return conn;
             }

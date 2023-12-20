@@ -51,6 +51,7 @@
     <VcpkgConfiguration>Release</VcpkgConfiguration>
   </PropertyGroup>
   <ItemGroup>
+    <ClInclude Include="..\OptionScannerTWS\ContractData.h" />
     <ClInclude Include="..\OptionScannerTWS\SQLSchemas\CandleRoutes.h" />
     <ClInclude Include="..\OptionScannerTWS\SQLSchemas\DatabaseManager.h" />
     <ClInclude Include="..\OptionScannerTWS\SQLSchemas\SQLSchema.h" />
@@ -67,6 +68,7 @@
     <ClCompile Include="..\OptionScannerTWS\ContractData.cpp" />
     <ClCompile Include="..\OptionScannerTWS\Enums.cpp" />
     <ClCompile Include="..\OptionScannerTWS\libs\nanodbc\nanodbc.cpp" />
+    <ClCompile Include="..\OptionScannerTWS\SQLSchemas\DatabaseManager.cpp" />
     <ClCompile Include="BenchmarkTests\benchmarks.cpp" />
     <ClCompile Include="DatabaseTests\db_connection_test.cpp" />
     <ClCompile Include="IntegrationTests\alert_handler_tests.cpp">

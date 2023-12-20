@@ -9,6 +9,8 @@
 
 #pragma once
 
+#define TEST_CONFIG
+
 #include <iostream>
 #include <vector>
 #include <chrono>

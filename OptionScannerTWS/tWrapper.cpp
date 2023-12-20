@@ -1,5 +1,5 @@
 #include "tWrapper.h"
-#include "Logger.h"
+//#include "Logger.h"
 
 //====================================================
 // Wrapper for TWS API

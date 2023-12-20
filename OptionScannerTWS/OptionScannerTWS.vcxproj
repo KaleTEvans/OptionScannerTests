@@ -149,7 +149,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\TwsApiCpp-master\TwsApiC++\Api;$(SolutionDir)OptionScannerTWS\libs;C:\TwsApiCpp-master\source\PosixClient\Shared</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)OptionScannerTWS\SQLSchemas;C:\TwsApiCpp-master\TwsApiC++\Api;$(SolutionDir)OptionScannerTWS\libs;C:\TwsApiCpp-master\source\PosixClient\Shared</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>

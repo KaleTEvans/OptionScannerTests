@@ -10,7 +10,7 @@
 #include "../Alerts/AlertTags.h"
 
 #include "../Enums.h"
-#include "../Logger.h"
+//#include "../Logger.h"
 
 using std::string;
 
@@ -51,7 +51,8 @@ namespace OptionDB {
 				}
 			}
 			catch (const std::exception& e) {
-				OPTIONSCANNER_ERROR("Error: {}", e.what());
+				//OPTIONSCANNER_ERROR("Error: {}", e.what());
+				std::cout << "Error: " << e.what() << std::endl;
 			}
 		}
 
@@ -68,10 +69,12 @@ namespace OptionDB {
 
 				initializeTagTable(conn);
 
-				OPTIONSCANNER_DEBUG("Tag Table Initialized");
+				//OPTIONSCANNER_DEBUG("Tag Table Initialized");
+				std::cout << "Tag Table Initialized" << std::endl;
 			}
 			catch (const std::exception& e) {
-				OPTIONSCANNER_ERROR("Error: {}", e.what());
+				//OPTIONSCANNER_ERROR("Error: {}", e.what());
+				std::cout << "Error: " << e.what() << std::endl;
 			}
 		}
 
@@ -92,10 +95,11 @@ namespace OptionDB {
 
 				nanodbc::execute(conn, sql);
 
-				OPTIONSCANNER_DEBUG("Alert Table Initialized");
+				//OPTIONSCANNER_DEBUG("Alert Table Initialized");
 			}
 			catch (const std::exception& e) {
-				OPTIONSCANNER_ERROR("Error: {}", e.what());
+				//OPTIONSCANNER_ERROR("Error: {}", e.what());
+				std::cout << "Error: " << e.what() << std::endl;
 			}
 		}
 
@@ -113,10 +117,11 @@ namespace OptionDB {
 
 				nanodbc::execute(conn, sql);
 
-				OPTIONSCANNER_DEBUG("Alert Tag Combination Table Initialized");
+				//OPTIONSCANNER_DEBUG("Alert Tag Combination Table Initialized");
 			}
 			catch (const std::exception& e) {
-				OPTIONSCANNER_ERROR("Error: {}", e.what());
+				//OPTIONSCANNER_ERROR("Error: {}", e.what());
+				std::cout << "Error: " << e.what() << std::endl;
 			}
 		}
 

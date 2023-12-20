@@ -1,5 +1,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 
+#define TEST_CONFIG
+
 #ifndef TEST_CONFIG
 
 #include <iostream>
@@ -17,7 +19,6 @@
 #include "App.h"
 #include "OptionScanner.h"
 #include "ContractData.h"
-#include "AlertHandler.h"
 
 using std::cout;
 using std::endl;

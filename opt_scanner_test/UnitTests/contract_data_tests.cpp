@@ -6,6 +6,8 @@
 #include "../MockClasses/MockClient.h"
 #include "../MockClasses/MockWrapper.h"
 
+#include <algorithm>
+
 
 using namespace testing;
 
@@ -42,8 +44,9 @@ TEST(ContractDataTests, updateDataTest) {
 	EXPECT_EQ(cd.contractId(), 1234);
 
 	for (size_t i = 1; i < data.size(); i++) {
-		maxPrice = std::max(maxPrice, data[i]->high());
-		minPrice = std::min(minPrice, data[i]->low());
+		double curHigh = data[i]->high();
+		//maxPrice = std::max(maxPrice, curHigh);
+		//minPrice = std::min(minPrice, data[i]->low());
 		totalVol += data[i]->volume();
 		cd.updateData(std::move(data[i]));
 	}

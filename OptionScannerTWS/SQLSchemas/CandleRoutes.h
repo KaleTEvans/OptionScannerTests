@@ -52,7 +52,8 @@ namespace OptionDB {
 				std::cout << "Candles Table Initialized" << std::endl;
 			}
 			catch (const std::exception& e) {
-				OPTIONSCANNER_ERROR("Error: {}", e.what());
+				//OPTIONSCANNER_ERROR("Error: {}", e.what());
+				std::cout << "Error: " << e.what() << std::endl;
 			}
 		}
 
@@ -86,7 +87,8 @@ namespace OptionDB {
 				}
 			}
 			catch (const std::exception& e) {
-				OPTIONSCANNER_ERROR("Error: {}", e.what());
+				//OPTIONSCANNER_ERROR("Error: {}", e.what());
+				std::cout << "Error: " << e.what() << std::endl;
 			}
 
 			return candles;
@@ -121,7 +123,8 @@ namespace OptionDB {
 				stmt.execute();
 			}
 			catch (const std::exception& e) {
-				OPTIONSCANNER_ERROR("Error: {}", e.what());
+				//OPTIONSCANNER_ERROR("Error: {}", e.what());
+				std::cout << "Error: " << e.what() << std::endl;
 			}
 		}
 
@@ -136,7 +139,8 @@ namespace OptionDB {
 				stmt.execute();
 			}
 			catch (const std::exception& e) {
-				OPTIONSCANNER_ERROR("Error: {}", e.what());
+				//OPTIONSCANNER_ERROR("Error: {}", e.what());
+				std::cout << "Error: " << e.what() << std::endl;
 			}
 		}
 
@@ -151,7 +155,8 @@ namespace OptionDB {
 				stmt.execute();
 			}
 			catch (const std::exception& e) {
-				OPTIONSCANNER_ERROR("Error: {}", e.what());
+				//OPTIONSCANNER_ERROR("Error: {}", e.what());
+				std::cout << "Error: " << e.what() << std::endl;
 			}
 		}
 	}
