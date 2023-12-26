@@ -1,28 +1,28 @@
 //#include "pch.h"
 #include "MockOptionScanner.h"
 
-MockOptionScanner::MockOptionScanner(int delay) : delay_(delay), EC(YW), SPX_("SPX", 1234, 5, 4, "IND") {
+MockOptionScanner::MockOptionScanner(int delay) : delay_(delay), EC(YW) {
 
 	// Request last quote for SPX upon class initiation to get closest option strikes
-	/*SPX.symbol = "SPX";
+	SPX.symbol = "SPX";
 	SPX.secType = "IND";
-	SPX.currency = "USD";*/
+	SPX.currency = "USD";
 
 	EC.setCandleInterval(delay);
 
 	// Create RTB request for SPX underlying **This will not be accessible until buffer is processed
-	/*EC.reqRealTimeBars
+	EC.reqRealTimeBars
 	(1234
 		, SPX
 		, 0
 		, ""
 		, true
-	);*/
+	);
 
 	// Add SPX to the added contracts set
-	//addedContracts.insert(1234);
+	addedContracts.push_back(1234);
 
-	SPX_.initializeOptionRequests(EC, 111);
+	//SPX_.initializeOptionRequests(EC, 111);
 
 	// Initialzie the contract chain
 	contractChain_ = std::make_shared<std::unordered_map<int, std::shared_ptr<ContractData>>>();
@@ -33,7 +33,7 @@ int MockOptionScanner::checkContractMap() { return contractChain_->size(); }
 double MockOptionScanner::currentSPX() { return (currentSPX_); }
 int MockOptionScanner::diffChainSize() { return (curChainSize_ - prevChainSize_); }
 int MockOptionScanner::prevBufferCapacity() { return prevBufferCapacity_; }
-std::unordered_set<int> MockOptionScanner::finalContractCt() { return addedContracts; }
+std::vector<int> MockOptionScanner::finalContractCt() { return addedContracts; }
 
 
 //============================================================
@@ -43,8 +43,8 @@ std::unordered_set<int> MockOptionScanner::finalContractCt() { return addedContr
 void MockOptionScanner::streamOptionData() {
 
 	currentSPX_ = YW.getSPXPrice();
-	//updateStrikes(currentSPX_);
-	SPX_.updateOptionRequests(EC, currentSPX_, "", contractChain_);
+	updateStrikes(currentSPX_);
+	//SPX_.updateOptionRequests(EC, currentSPX_, "", contractChain_);
 
 	// Add temporary comparison value for Chain
 	prevChainSize_ = 19;
@@ -84,13 +84,14 @@ void MockOptionScanner::streamOptionData() {
 		curChainSize_ = contractChain_->size();
 		currentSPX_ = contractChain_->at(1234)->currentPrice();
 		// std::cout << "Buffer size currently at: " << YW.getBufferCapacity() << std::endl;
+		strikesUpdated = true;
 
 		lock.unlock();
 		mosCnditional.notify_one();
 
-		//updateStrikes(contractChain_->at(1234)->currentPrice());
-		SPX_.updateOptionRequests(EC, contractChain_->at(1234)->currentPrice(), "", contractChain_);
-		strikesUpdated = true;
+		updateStrikes(contractChain_->at(1234)->currentPrice());
+		//SPX_.updateOptionRequests(EC, contractChain_->at(1234)->currentPrice(), "", contractChain_);
+		
 	}
 
 	if (!YW.notDone()) {
@@ -175,7 +176,7 @@ void MockOptionScanner::updateStrikes(double price) {
 		);
 
 		// Update contract request vector
-		addedContracts.insert(req);
+		addedContracts.push_back(req);
 
 		contractReqQueue.pop();
 	}

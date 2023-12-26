@@ -44,9 +44,8 @@ TEST(ContractDataTests, updateDataTest) {
 	EXPECT_EQ(cd.contractId(), 1234);
 
 	for (size_t i = 1; i < data.size(); i++) {
-		double curHigh = data[i]->high();
-		//maxPrice = std::max(maxPrice, curHigh);
-		//minPrice = std::min(minPrice, data[i]->low());
+		maxPrice = (std::max)(maxPrice, data[i]->high());
+		minPrice = (std::min)(minPrice, data[i]->low());
 		totalVol += data[i]->volume();
 		cd.updateData(std::move(data[i]));
 	}

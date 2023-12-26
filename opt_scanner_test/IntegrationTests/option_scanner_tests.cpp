@@ -64,7 +64,7 @@ TEST(MockOptionScannerTests, SPXPriceUpdateTest) {
 	EXPECT_EQ(mos.YW.getBufferCapacity(), mos.YW.checkActiveReqs());
 	EXPECT_EQ(mos.YW.getBufferCapacity(), mos.finalContractCt().size());
 
-	std::unordered_set<int> optScanReqs = mos.finalContractCt();
+	std::vector<int> optScanReqs = mos.finalContractCt();
 	std::unordered_set<int> wrapperReqs = mos.YW.getActiveReqs();
 
 	for (auto i : optScanReqs) {

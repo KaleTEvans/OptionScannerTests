@@ -37,7 +37,7 @@ public:
 	double currentSPX();
 	int diffChainSize();
 	int prevBufferCapacity();
-	std::unordered_set<int> finalContractCt();
+	std::vector<int> finalContractCt();
 
 	MockClient EC;
 	MockWrapper YW;
@@ -50,7 +50,7 @@ public:
 
 private:
 	Contract SPX; // Contract to be monitored
-	Securities::SecurityRequestHandler SPX_;
+	//Securities::SecurityRequestHandler SPX_;
 
 	IBString ticker;
 
@@ -71,7 +71,7 @@ private:
 
 	std::queue<Contract> contractReqQueue; // Holds new contracts to request data
 	std::unordered_set<int> contractsInScope; // If a contract isn't in the main scope of 18, it won't create an alert
-	std::unordered_set<int> addedContracts; // Keep track of all currently requested contracts
+	std::vector<int> addedContracts; // Keep track of all currently requested contracts
 
 	// Alerts::AlertHandler alertHandler;
 };

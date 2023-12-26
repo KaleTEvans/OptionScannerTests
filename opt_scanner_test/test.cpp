@@ -8,10 +8,11 @@ int main(int argc, char** argv) {
     ::testing::InitGoogleTest(&argc, argv);
 
     // Isolate desired tests with this filter
-    //::testing::GTEST_FLAG(filter) = "DBTests*";
+    //::testing::GTEST_FLAG(filter) = "CandleTest*";
 
     // Exclude tests here
     ::testing::GTEST_FLAG(filter) = "-BenchmarkTests*";
+    ::testing::GTEST_FLAG(filter) = "-DBTests*";
 
     return RUN_ALL_TESTS();
 }

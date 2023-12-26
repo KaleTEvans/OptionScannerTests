@@ -2,14 +2,31 @@
 
 namespace Securities {
 
-	SecurityRequestHandler::SecurityRequestHandler(IBString ticker, int req, int multiple, int numStrikes, std::string secType_) :
-		ticker_(ticker), req_(req), multiple_(multiple), numStrikes_(numStrikes)
+	Security::Security(IBString ticker, int multiple, std::string secType) :
+		ticker(ticker), multiple(multiple), secType(secType) 
 	{
-		con_.symbol = ticker;
-		con_.secType = secType_;
-		con_.currency = "USD";
-		con_.primaryExchange = "CBOE";
+		// Create primary contract for underlying
+		con.symbol = ticker;
+		con.secType = secType;
+		con.currency = "USD";
+		con.primaryExchange = "CBOE";
+
+		// Create option contracts
+		callContract.symbol = ticker;
+		callContract.secType = "OPT";
+		callContract.currency = "USD";
+		callContract.exchange = "CBOE";
+		callContract.right = "CALL";
+
+		putContract.symbol = ticker;
+		putContract.secType = "OPT";
+		putContract.currency = "USD";
+		putContract.exchange = "CBOE";
+		putContract.right = "PUT";
 	}
+
+	SecurityRequestHandler::SecurityRequestHandler(Security sec, int req, int numStrikes, IBString todayDate) :
+		sec_(sec), req_(req), numStrikes_(numStrikes), todayDate_(todayDate) {}
 
 	int SecurityRequestHandler::numReqs() const { return currentReqs_.size(); }
 	std::vector<int> SecurityRequestHandler::currentActiveReqs() const { return currentReqs_; }
@@ -21,7 +38,7 @@ namespace Securities {
 		// Send an RTB request for underlying index
 		EC.reqRealTimeBars
 		(req_
-			, con_
+			, sec_.con
 			, 5
 			, ""
 			, UseRTH::OnlyRegularTradingData
@@ -35,8 +52,6 @@ namespace Securities {
 	void SecurityRequestHandler::updateOptionRequests(MockClient& EC, const double curPrice, IBString todayDate,
 		std::shared_ptr<std::unordered_map<int, std::shared_ptr<ContractData>>> chainData) {
 
-		std::lock_guard<std::mutex> lock(secMtx);
-
 		std::vector<int> strikes = getStrikes(curPrice);
 
 		// Request queue gets filled by new strikes
@@ -49,22 +64,29 @@ namespace Securities {
 			// If the contracts map doesn't already contain the strike, then a new one has come into scope
 			if (chainData->find(i) == chainData->end()) {
 				// Create new contracts if not in map and add to queue for requests
-				Contract con;
-				con.symbol = ticker_;
-				con.secType = "OPT";
-				con.currency = "USD";
-				con.exchange = "SMART";
-				con.primaryExchange = "CBOE";
-				con.lastTradeDateOrContractMonth = todayDate;
-				con.strike = i;
-				con.right = "CALL";
+				//Contract con;
+				//con.symbol = ticker_;
+				//con.secType = "OPT";
+				//con.currency = "USD";
+				//con.exchange = "SMART";
+				//con.primaryExchange = "CBOE";
+				//con.lastTradeDateOrContractMonth = todayDate;
+				//con.strike = i;
+				//con.right = "CALL";
 
-				// Insert into the request queue
-				reqQueue.push(con);
+				//// Insert into the request queue
+				//reqQueue.push(con);
 
-				// Now change contract to put and insert
-				con.right = "PUT";
-				reqQueue.push(con);
+				//// Now change contract to put and insert
+				//con.right = "PUT";
+				//reqQueue.push(con);
+
+				Contract callCon = sec_.callContract;
+				Contract putCon = sec_.putContract;
+				callCon.strike = i;
+				putCon.strike = i;
+				reqQueue.push(callCon);
+				reqQueue.push(putCon);
 			}
 
 			// Update the contracts being tracked within the scope
@@ -105,14 +127,14 @@ namespace Securities {
 		std::vector<int> strikes;
 
 		// Round the price down to nearest increment
-		int roundedPrice = int(price + (multiple_ / 2));
-		roundedPrice -= roundedPrice % multiple_;
-		int strikePrice = roundedPrice - (multiple_ * 5);
+		int roundedPrice = int(price + (sec_.multiple / 2));
+		roundedPrice -= roundedPrice % sec_.multiple;
+		int strikePrice = roundedPrice - (sec_.multiple * 5);
 
 		// This will give us 2 times the number of strikes provided
-		while (strikePrice <= roundedPrice + (multiple_ * numStrikes_)) {
+		while (strikePrice <= roundedPrice + (sec_.multiple * numStrikes_)) {
 			strikes.push_back(strikePrice);
-			strikePrice += multiple_;
+			strikePrice += sec_.multiple;
 		}
 
 		for (auto i : strikes) std::cout << i << " ";

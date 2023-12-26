@@ -7,6 +7,7 @@
 #include <queue>
 #include <vector>
 #include <memory>
+#include <chrono>
 
 //#include "tWrapper.h"
 #include "MockWrapper.h"
@@ -15,9 +16,20 @@
 
 namespace Securities {
 
+	struct Security {
+		Security(IBString ticker, int multiple, std::string secType);
+
+		IBString ticker;
+		Contract con;
+		Contract callContract;
+		Contract putContract;
+		int multiple;
+		std::string secType;
+	};
+
 	class SecurityRequestHandler {
 	public:
-		SecurityRequestHandler(IBString ticker, int req, int multiple, int numStrikes, std::string secType);
+		SecurityRequestHandler(Security sec, int req, int numStrikes, IBString todayDate);
 
 		// Mutators
 		int numReqs() const;
@@ -35,12 +47,10 @@ namespace Securities {
 
 
 	private:
-		IBString ticker_;
-		Contract con_;
-		int multiple_;
+		Security sec_;
 		int req_;
 		int numStrikes_;
-		std::string secType_;
+		IBString todayDate_;
 
 		std::vector<int> currentReqs_;
 		std::unordered_set<int> consInScope_;
