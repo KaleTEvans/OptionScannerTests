@@ -45,7 +45,7 @@ public:
 
 	// With each incoming candle, we will need to update the vectors for each time frame
 	// This will also update stDevs for each time series
-	void updateData(std::unique_ptr<Candle> c);
+	void updateData(std::unique_ptr<Candle> c, double underlyingRefPrice = 0);
 
 	// Accessors
 	TickerId contractId() const;
@@ -70,6 +70,7 @@ public:
 	vector<std::pair<long, long long>> volOverTime() const;
 	vector<bool> highLowComparisons() const;
 
+
 	StandardDeviation priceStDev(TimeFrame tf);
 	StandardDeviation volStDev(TimeFrame tf);
 
@@ -77,6 +78,14 @@ private:
 	const TickerId contractId_;
 	std::shared_ptr<OptionDB::DatabaseManager> dbm_{ nullptr };
 	bool dbConnect{ false };
+
+	Alerts::OptionType optType_;
+	Alerts::TimeOfDay tod_;
+	Alerts::RelativeToMoney rtm_;
+	Alerts::VolumeStDev volStDev_;
+	Alerts::VolumeThreshold volThresh_;
+	Alerts::DailyHighsAndLows optDHL_;
+	Alerts::LocalHighsAndLows optLHL_;
 
 	vector<std::shared_ptr<Candle>> fiveSecCandles_;
 	vector<std::shared_ptr<Candle>> thirtySecCandles_;

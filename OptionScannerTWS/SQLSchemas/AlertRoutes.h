@@ -23,8 +23,8 @@ namespace OptionDB {
 		//================================================
 
 		inline void initializeTagTable(nanodbc::connection conn) {
-			AlertTagDBInterface dbi;
-			std::unordered_map<std::pair<string, string>, int, PairHash> ti = dbi.tagInterface();
+			TagDBInterface::AlertTagDBInterface dbi;
+			std::unordered_map<std::pair<string, string>, int, TagDBInterface::PairHash> ti = dbi.tagInterface();
 
 			try {
 				nanodbc::statement stmt(conn);
@@ -36,10 +36,6 @@ namespace OptionDB {
 					int TagId = i.second;
 					string TagName = i.first.first;
 					string TagType = i.first.second;
-					const int WeightedWins = 0;
-					const int UnweightedWins = 0;
-					const int AverageWin = 0;
-					const int Total = 0;
 
 					stmt.bind(0, &TagId);
 					stmt.bind(1, TagName.c_str());

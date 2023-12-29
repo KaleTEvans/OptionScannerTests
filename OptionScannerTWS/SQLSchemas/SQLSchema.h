@@ -27,6 +27,8 @@ namespace OptionDB {
 
     inline nanodbc::connection connectToDB() {
 
+        std::cout << "Retreiving ENVs" << std::endl;
+
         // Retrieve connection configuration variables
         std::string server = std::getenv("DB_SERVER_NAME");
         std::string dbName = std::getenv("DB_NAME");

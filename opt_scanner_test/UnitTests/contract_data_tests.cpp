@@ -113,3 +113,25 @@ TEST(ContractDataTests, AlertSystemTest) {
 	EXPECT_TRUE(std::get<0>(vTests[3]) == TimeFrame::FiveMin && std::get<1>(vTests[3]) >= 1000000 && std::get<2>(vTests[3]) > 2);
 	EXPECT_EQ(alertCount, 4); // Four for each timeframe
 }
+
+// Test will check to ensure option strike relative to money, volume standard deviation, high and low comparisons, option type, and
+// time of day numbers will all be included with candle updates
+TEST(ContractDataTests, AdditionalDBItems) {
+	MockWrapper mWrapper;
+	MockClient mClient(mWrapper);
+
+	std::vector<std::unique_ptr<Candle>> candles;
+	double spxRefPrice = 4074.5;
+
+	for (size_t i = 0; i < 720; i++) {
+		if (i == 300) {
+			candles.push_back(std::move(std::make_unique<Candle>(11, i, 3, 4, 1, 3, 1000000)));
+		}
+		else {
+			candles.push_back(std::move(std::make_unique<Candle>(11, i, 3, 4, 1, 3, 1000)));
+		}
+	}
+
+	TickerId reqId = candles[0]->reqId();
+	ContractData cd(reqId, std::move(candles[0]));
+}

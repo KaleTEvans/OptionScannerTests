@@ -178,6 +178,13 @@ namespace Alerts {
 		return res;
 	}
 
+	OptionType string_to_option_type(const std::string& str) {
+		if (str == "Call") return OptionType::Call;
+		if (str == "Put") return OptionType::Put;
+
+		throw std::invalid_argument("Unknown string for OptionType");
+	}
+
 	std::string EnumString::relative_to_money(RelativeToMoney val) {
 		std::string res;
 		switch (val)
@@ -186,39 +193,55 @@ namespace Alerts {
 			res = "ATM";
 			break;
 		case Alerts::RelativeToMoney::ITM1:
-			res = "1 Strikes ITM";
+			res = "ITM1";
 			break;
 		case Alerts::RelativeToMoney::ITM2:
-			res = "2 Strikes ITM";
+			res = "ITM2";
 			break;
 		case Alerts::RelativeToMoney::ITM3:
-			res = "3 Strikes ITM";
+			res = "ITM3";
 			break;
 		case Alerts::RelativeToMoney::ITM4:
-			res = "4 Strikes ITM";
+			res = "ITM4";
 			break;
 		case Alerts::RelativeToMoney::DeepITM:
-			res = "Deep ITM";
+			res = "DeepITM";
 			break;
 		case Alerts::RelativeToMoney::OTM1:
-			res = "1 Strikes OTM";
+			res = "OTM1";
 			break;
 		case Alerts::RelativeToMoney::OTM2:
-			res = "2 Strikes OTM";
+			res = "OTM2";
 			break;
 		case Alerts::RelativeToMoney::OTM3:
-			res = "3 Strikes OTM";
+			res = "OTM3";
 			break;
 		case Alerts::RelativeToMoney::OTM4:
-			res = "4 Strikes OTM";
+			res = "OTM4";
 			break;
 		case Alerts::RelativeToMoney::DeepOTM:
-			res = "Deep OTM";
+			res = "DeepOTM";
 			break;
 		default:
 			break;
 		}
 		return res;
+	}
+
+	RelativeToMoney str_to_rtm(const std::string& str) {
+		if (str == "ATM") return RelativeToMoney::ATM;
+		if (str == "ITM1") return RelativeToMoney::ITM1;
+		if (str == "ITM2") return RelativeToMoney::ITM2;
+		if (str == "ITM3") return RelativeToMoney::ITM3;
+		if (str == "ITM4") return RelativeToMoney::ITM4;
+		if (str == "DeepITM") return RelativeToMoney::DeepITM;
+		if (str == "OTM1") return RelativeToMoney::OTM1;
+		if (str == "OTM2") return RelativeToMoney::OTM2;
+		if (str == "OTM3") return RelativeToMoney::OTM3;
+		if (str == "OTM4") return RelativeToMoney::OTM4;
+		if (str == "DeepOTM") return RelativeToMoney::DeepOTM;
+
+		throw std::invalid_argument("Unknown string for RTM");
 	}
 
 	std::string EnumString::time_of_day(TimeOfDay val) {
@@ -250,6 +273,12 @@ namespace Alerts {
 			break;
 		}
 		return res;
+	}
+
+	TimeOfDay str_to_tod(const std::string& str) {
+		if (str == "Hour1") return TimeOfDay::Hour1;
+		if (str == "Hour2") return TimeOfDay::Hour2;
+		if (str == "Hour3") return TimeOfDay::Hour3;
 	}
 
 	std::string EnumString::vol_st_dev(VolumeStDev val) {

@@ -72,3 +72,11 @@ void Candle::convertUnixToDate() const {
     date_ = date;
 }
 
+CandleTags::CandleTags(Candle c, TimeFrame tf, Alerts::OptionType optType, Alerts::TimeOfDay tod, Alerts::RelativeToMoney rtm,
+    Alerts::VolumeStDev volStDev, Alerts::VolumeThreshold volThresh, Alerts::DailyHighsAndLows optDHL, Alerts::LocalHighsAndLows optLHL) :
+    c(c), tf_(tf), optType_(optType), tod_(tod), rtm_(rtm), volStDev_(volStDev), volThresh_(volThresh), optDHL_(optDHL), optLHL_(optLHL) {}
+
+CandleTags::CandleTags(Candle c, std::vector<int> tags) : c(c), tags_(tags) 
+{
+
+}

@@ -48,7 +48,7 @@ void ContractData::setupDatabaseManager(std::shared_ptr<OptionDB::DatabaseManage
 // The input data function will be called each time a new candle is received, and will be where we 
 // update each time series vector, stdev and mean. The chaining of if statements ensures that
 // each vector has enough values to fill the next timeframe
-void ContractData::updateData(std::unique_ptr<Candle> c) {
+void ContractData::updateData(std::unique_ptr<Candle> c, double underlyingRefPrice) {
 	//============================================================
 	// 5 Second Candle Options
 	// ===========================================================

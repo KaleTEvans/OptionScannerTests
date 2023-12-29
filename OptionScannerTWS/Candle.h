@@ -12,6 +12,8 @@
 #include "TwsApiDefs.h"
 using namespace TwsApi; // for TwsApiDefs.h
 
+#include "Enums.h"
+
 class Candle {
 public:
     // Constructor for historical data
@@ -56,4 +58,38 @@ private:
     double WAP_;
     int hasGaps_;
     int count_;
+};
+
+// This will contain all tags available to be obtained upon the creation of a candle
+// This allows for the candle itself to remain lightweight while this data is sent to the db
+// or sent via callback to the alert handler
+class CandleTags {
+public:
+    CandleTags(Candle c, TimeFrame tf, Alerts::OptionType optType, Alerts::TimeOfDay tod, Alerts::RelativeToMoney rtm,
+        Alerts::VolumeStDev volStDev, Alerts::VolumeThreshold volThresh, Alerts::DailyHighsAndLows optDHL, Alerts::LocalHighsAndLows optLHL);
+
+    // Constructor if receiving db data
+    CandleTags(Candle c, std::vector<int> tags);
+
+    TimeFrame getTimeFrame() const;
+    Alerts::OptionType getOptType() const;
+    Alerts::TimeOfDay getTOD() const;
+    Alerts::RelativeToMoney getRTM() const;
+    Alerts::VolumeStDev getVolStDev() const;
+    Alerts::VolumeThreshold getVolThresh() const;
+    Alerts::DailyHighsAndLows getDHL() const;
+    Alerts::LocalHighsAndLows getLHL() const;
+
+private:
+    Candle c;
+    std::vector<int> tags_{};
+
+    TimeFrame tf_;
+    Alerts::OptionType optType_;
+    Alerts::TimeOfDay tod_;
+    Alerts::RelativeToMoney rtm_;
+    Alerts::VolumeStDev volStDev_;
+    Alerts::VolumeThreshold volThresh_;
+    Alerts::DailyHighsAndLows optDHL_;
+    Alerts::LocalHighsAndLows optLHL_;
 };

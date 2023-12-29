@@ -78,5 +78,14 @@ namespace Alerts {
 		static std::string price_delta(PriceDelta val);
 		static std::string daily_highs_and_lows(DailyHighsAndLows val);
 		static std::string local_highs_and_lows(LocalHighsAndLows val);
+
+		static OptionType str_to_option_type(const std::string& str);
+		static RelativeToMoney str_to_rtm(const std::string& str);
+		static TimeOfDay str_to_tod(const std::string& str);
+		static VolumeStDev str_to_vol_stdev(const std::string& str);
+		static VolumeThreshold str_to_vol_thresh(const std::string& str);
+		static PriceDelta str_to_price_delta(const std::string& str);
+		static DailyHighsAndLows str_to_daily_hl(const std::string& str);
+		static LocalHighsAndLows str_to_local_hl(const std::string& str);
 	};
 }
