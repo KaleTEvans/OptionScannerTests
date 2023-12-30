@@ -96,3 +96,14 @@ CandleTags::CandleTags(Candle c, std::vector<int> tags) : c(c), tags_(tags)
     optDHL_ = Alerts::EnumString::str_to_daily_hl(opt_dhl);
     optLHL_ = Alerts::EnumString::str_to_local_hl(opt_lhl);
 }
+
+
+// Candle Tag Accessors
+TimeFrame CandleTags::getTimeFrame() const { return tf_; }
+Alerts::OptionType CandleTags::getOptType() const { return optType_; }
+Alerts::TimeOfDay CandleTags::getTOD() const { return tod_; }
+Alerts::RelativeToMoney CandleTags::getRTM() const { return rtm_; }
+Alerts::VolumeStDev CandleTags::getVolStDev() const { return volStDev_; }
+Alerts::VolumeThreshold CandleTags::getVolThresh() const { return volThresh_; }
+Alerts::DailyHighsAndLows CandleTags::getDHL() const { return optDHL_; }
+Alerts::LocalHighsAndLows CandleTags::getLHL() const { return optLHL_; }
