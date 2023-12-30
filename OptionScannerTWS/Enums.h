@@ -3,6 +3,8 @@
 #include <iostream>
 #include <unordered_map>
 
+using std::string;
+
 // All enumerations used alongside price and options data with output overloads
 
 // Time frame enums
@@ -15,6 +17,7 @@ enum class TimeFrame {
 
 std::ostream& operator<<(std::ostream& out, const TimeFrame value);
 std::string time_frame(TimeFrame val);
+TimeFrame str_to_tf(const std::string& str);
 
 // Enums attached to alerts
 namespace Alerts {
@@ -88,4 +91,33 @@ namespace Alerts {
 		static DailyHighsAndLows str_to_daily_hl(const std::string& str);
 		static LocalHighsAndLows str_to_local_hl(const std::string& str);
 	};
+
+	struct PairHash {
+		template <class T1, class T2>
+		std::size_t operator() (const std::pair<T1, T2>& p) const {
+			auto h1 = std::hash<T1>{}(p.first);
+			auto h2 = std::hash<T2>{}(p.second);
+			return h1 ^ h2;
+		}
+	};
+
+
+	class TagDBInterface {
+	public:
+		static std::unordered_map<std::pair<string, string>, int, PairHash> tagToInt;
+		// Reverse of map to use table keys as map keys
+		static std::unordered_map<int, std::pair<string, string>> intToTag;
+
+		static void initialize();
+	};
+
+	struct StaticInitializer {
+		StaticInitializer() {
+			TagDBInterface::initialize();
+		}
+	};
+
+	// Create a single instance of the static initializer
+	extern StaticInitializer staticInitializerInstance;
 }
+

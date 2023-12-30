@@ -37,6 +37,15 @@ std::string time_frame(TimeFrame val) {
 	return res;
 }
 
+TimeFrame str_to_tf(const std::string& str) {
+	if (str == "FiveSecs") return TimeFrame::FiveSecs;
+	if (str == "ThirtySecs") return TimeFrame::ThirtySecs;
+	if (str == "OneMin") return TimeFrame::OneMin;
+	if (str == "FiveMin") return TimeFrame::FiveMin;
+
+	throw std::invalid_argument("Unknown string for TimeFrame");
+}
+
 namespace Alerts {
 
 	std::ostream& operator<<(std::ostream& out, const OptionType value) {
@@ -178,7 +187,7 @@ namespace Alerts {
 		return res;
 	}
 
-	OptionType string_to_option_type(const std::string& str) {
+	OptionType EnumString::str_to_option_type(const std::string& str) {
 		if (str == "Call") return OptionType::Call;
 		if (str == "Put") return OptionType::Put;
 
@@ -228,7 +237,7 @@ namespace Alerts {
 		return res;
 	}
 
-	RelativeToMoney str_to_rtm(const std::string& str) {
+	RelativeToMoney EnumString::str_to_rtm(const std::string& str) {
 		if (str == "ATM") return RelativeToMoney::ATM;
 		if (str == "ITM1") return RelativeToMoney::ITM1;
 		if (str == "ITM2") return RelativeToMoney::ITM2;
@@ -275,10 +284,16 @@ namespace Alerts {
 		return res;
 	}
 
-	TimeOfDay str_to_tod(const std::string& str) {
+	TimeOfDay EnumString::str_to_tod(const std::string& str) {
 		if (str == "Hour1") return TimeOfDay::Hour1;
 		if (str == "Hour2") return TimeOfDay::Hour2;
 		if (str == "Hour3") return TimeOfDay::Hour3;
+		if (str == "Hour4") return TimeOfDay::Hour4;
+		if (str == "Hour5") return TimeOfDay::Hour5;
+		if (str == "Hour6") return TimeOfDay::Hour6;
+		if (str == "Hour7") return TimeOfDay::Hour7;
+
+		throw std::invalid_argument("Unknown string for Time of Day");
 	}
 
 	std::string EnumString::vol_st_dev(VolumeStDev val) {
@@ -306,6 +321,16 @@ namespace Alerts {
 		return res;
 	}
 
+	VolumeStDev EnumString::str_to_vol_stdev(const std::string& str) {
+		if (str == "Over1") return VolumeStDev::Over1;
+		if (str == "Over2") return VolumeStDev::Over2;
+		if (str == "Over3") return VolumeStDev::Over3;
+		if (str == "Over4") return VolumeStDev::Over4;
+		if (str == "LowVol") return VolumeStDev::LowVol;
+
+		throw std::invalid_argument("Unknown string for Vol StDev");
+	}
+
 	std::string EnumString::vol_threshold(VolumeThreshold val) {
 		std::string res;
 		switch (val)
@@ -331,6 +356,16 @@ namespace Alerts {
 		return res;
 	}
 
+	VolumeThreshold EnumString::str_to_vol_thresh(const std::string& str) {
+		if (str == "VolOver100") return VolumeThreshold::Vol100;
+		if (str == "VolOver250") return VolumeThreshold::Vol250;
+		if (str == "VolOver500") return VolumeThreshold::Vol500;
+		if (str == "VolOver1000") return VolumeThreshold::Vol1000;
+		if (str == "LowVol") return VolumeThreshold::LowVol;
+
+		throw std::invalid_argument("Unknown string for Vol Threshold");
+	}
+
 	std::string EnumString::price_delta(PriceDelta val) {
 		std::string res;
 		switch (val)
@@ -348,6 +383,14 @@ namespace Alerts {
 			break;
 		}
 		return res;
+	}
+
+	PriceDelta EnumString::str_to_price_delta(const std::string& str) {
+		if (str == "Under1") return PriceDelta::Under1;
+		if (str == "Under2") return PriceDelta::Under2;
+		if (str == "Over2") return PriceDelta::Over2;
+
+		throw std::invalid_argument("Unknown string for Price Delta");
 	}
 
 	std::string EnumString::daily_highs_and_lows(DailyHighsAndLows val) {
@@ -369,6 +412,14 @@ namespace Alerts {
 		return res;
 	}
 
+	DailyHighsAndLows EnumString::str_to_daily_hl(const std::string& str) {
+		if (str == "NearDailyLow") return DailyHighsAndLows::NDL;
+		if (str == "NearDailyHigh") return DailyHighsAndLows::NDH;
+		if (str == "InsideRange") return DailyHighsAndLows::Inside;
+
+		throw std::invalid_argument("Unknown string for Daily Highs and Lows");
+	}
+
 	std::string EnumString::local_highs_and_lows(LocalHighsAndLows val) {
 		std::string res;
 		switch (val)
@@ -387,4 +438,89 @@ namespace Alerts {
 		}
 		return res;
 	}
+
+	LocalHighsAndLows EnumString::str_to_local_hl(const std::string& str) {
+		if (str == "NearLocalLow") return LocalHighsAndLows::NLL;
+		if (str == "NearLocalHigh") return LocalHighsAndLows::NLH;
+		if (str == "InsideRange") return LocalHighsAndLows::Inside;
+
+		throw std::invalid_argument("Unknown string for Local Highs and Lows");
+	}
+
+	std::unordered_map<std::pair<string, string>, int, PairHash> TagDBInterface::tagToInt = {
+		{ {Alerts::EnumString::option_type(Alerts::OptionType::Call), "OptionType"}, 1 },
+		{ {Alerts::EnumString::option_type(Alerts::OptionType::Put), "OptionType"}, 2 },
+
+		{ {time_frame(TimeFrame::FiveSecs), "TimeFrame"}, 3 },
+		{ {time_frame(TimeFrame::ThirtySecs), "TimeFrame"}, 4 },
+		{ {time_frame(TimeFrame::OneMin), "TimeFrame"}, 5 },
+		{ {time_frame(TimeFrame::FiveMin), "TimeFrame"}, 6 },
+
+		{ {Alerts::EnumString::relative_to_money(Alerts::RelativeToMoney::ATM), "RelativeToMoney"}, 7 },
+		{ {Alerts::EnumString::relative_to_money(Alerts::RelativeToMoney::ITM1), "RelativeToMoney"}, 8 },
+		{ {Alerts::EnumString::relative_to_money(Alerts::RelativeToMoney::ITM2), "RelativeToMoney"}, 9 },
+		{ {Alerts::EnumString::relative_to_money(Alerts::RelativeToMoney::ITM3), "RelativeToMoney"}, 10 },
+		{ {Alerts::EnumString::relative_to_money(Alerts::RelativeToMoney::ITM4), "RelativeToMoney"}, 11 },
+		{ {Alerts::EnumString::relative_to_money(Alerts::RelativeToMoney::DeepITM), "RelativeToMoney"}, 12 },
+		{ {Alerts::EnumString::relative_to_money(Alerts::RelativeToMoney::OTM1), "RelativeToMoney"}, 13 },
+		{ {Alerts::EnumString::relative_to_money(Alerts::RelativeToMoney::OTM2), "RelativeToMoney"}, 14 },
+		{ {Alerts::EnumString::relative_to_money(Alerts::RelativeToMoney::OTM3), "RelativeToMoney"}, 15 },
+		{ {Alerts::EnumString::relative_to_money(Alerts::RelativeToMoney::OTM4), "RelativeToMoney"}, 16 },
+		{ {Alerts::EnumString::relative_to_money(Alerts::RelativeToMoney::DeepOTM), "RelativeToMoney"}, 17 },
+
+		{ {Alerts::EnumString::time_of_day(Alerts::TimeOfDay::Hour1), "TimeOfDay"}, 18 },
+		{ {Alerts::EnumString::time_of_day(Alerts::TimeOfDay::Hour2), "TimeOfDay"}, 19 },
+		{ {Alerts::EnumString::time_of_day(Alerts::TimeOfDay::Hour3), "TimeOfDay"}, 20 },
+		{ {Alerts::EnumString::time_of_day(Alerts::TimeOfDay::Hour4), "TimeOfDay"}, 21 },
+		{ {Alerts::EnumString::time_of_day(Alerts::TimeOfDay::Hour5), "TimeOfDay"}, 22 },
+		{ {Alerts::EnumString::time_of_day(Alerts::TimeOfDay::Hour6), "TimeOfDay"}, 23 },
+		{ {Alerts::EnumString::time_of_day(Alerts::TimeOfDay::Hour7), "TimeOfDay"}, 24 },
+
+		{ {Alerts::EnumString::vol_st_dev(Alerts::VolumeStDev::Over1), "VolumeStDev"}, 25 },
+		{ {Alerts::EnumString::vol_st_dev(Alerts::VolumeStDev::Over2), "VolumeStDev"}, 26 },
+		{ {Alerts::EnumString::vol_st_dev(Alerts::VolumeStDev::Over3), "VolumeStDev"}, 27 },
+		{ {Alerts::EnumString::vol_st_dev(Alerts::VolumeStDev::Over4), "VolumeStDev"}, 28 },
+		{ {Alerts::EnumString::vol_st_dev(Alerts::VolumeStDev::LowVol), "VolumeStDev"}, 29 },
+
+		{ {Alerts::EnumString::vol_threshold(Alerts::VolumeThreshold::Vol100), "VolumeThreshold"}, 30 },
+		{ {Alerts::EnumString::vol_threshold(Alerts::VolumeThreshold::Vol250), "VolumeThreshold"}, 31 },
+		{ {Alerts::EnumString::vol_threshold(Alerts::VolumeThreshold::Vol500), "VolumeThreshold"}, 32 },
+		{ {Alerts::EnumString::vol_threshold(Alerts::VolumeThreshold::Vol1000), "VolumeThreshold"}, 33 },
+		{ {Alerts::EnumString::vol_threshold(Alerts::VolumeThreshold::LowVol), "VolumeThreshold"}, 34 },
+
+		{ {Alerts::EnumString::price_delta(Alerts::PriceDelta::Under1), "UnderlyingPriceDelta"}, 35 },
+		{ {Alerts::EnumString::price_delta(Alerts::PriceDelta::Under2), "UnderlyingPriceDelta"}, 36 },
+		{ {Alerts::EnumString::price_delta(Alerts::PriceDelta::Over2), "UnderlyingPriceDelta"}, 37 },
+
+		{ {Alerts::EnumString::price_delta(Alerts::PriceDelta::Under1), "OptionPriceDelta"}, 38 },
+		{ {Alerts::EnumString::price_delta(Alerts::PriceDelta::Under2), "OptionPriceDelta"}, 39 },
+		{ {Alerts::EnumString::price_delta(Alerts::PriceDelta::Over2), "OptionPriceDelta"}, 40 },
+
+		{ {Alerts::EnumString::daily_highs_and_lows(Alerts::DailyHighsAndLows::NDL), "UnderlyingDailyHighsAndLows"}, 41 },
+		{ {Alerts::EnumString::daily_highs_and_lows(Alerts::DailyHighsAndLows::NDH), "UnderlyingDailyHighsAndLows"}, 42 },
+		{ {Alerts::EnumString::daily_highs_and_lows(Alerts::DailyHighsAndLows::Inside), "UnderlyingDailyHighsAndLows"}, 43 },
+
+		{ {Alerts::EnumString::daily_highs_and_lows(Alerts::DailyHighsAndLows::NDL), "OptionDailyHighsAndLows"}, 44 },
+		{ {Alerts::EnumString::daily_highs_and_lows(Alerts::DailyHighsAndLows::NDH), "OptionDailyHighsAndLows"}, 45 },
+		{ {Alerts::EnumString::daily_highs_and_lows(Alerts::DailyHighsAndLows::Inside), "OptionDailyHighsAndLows"}, 46 },
+
+		{ {Alerts::EnumString::local_highs_and_lows(Alerts::LocalHighsAndLows::NLL), "UnderlyingLocalHighsAndLows"}, 47 },
+		{ {Alerts::EnumString::local_highs_and_lows(Alerts::LocalHighsAndLows::NLH), "UnderlyingLocalHighsAndLows"}, 48 },
+		{ {Alerts::EnumString::local_highs_and_lows(Alerts::LocalHighsAndLows::Inside), "UnderlyingLocalHighsAndLows"}, 49 },
+
+		{ {Alerts::EnumString::local_highs_and_lows(Alerts::LocalHighsAndLows::NLL), "OptionLocalHighsAndLows"}, 50 },
+		{ {Alerts::EnumString::local_highs_and_lows(Alerts::LocalHighsAndLows::NLH), "OptionLocalHighsAndLows"}, 51 },
+		{ {Alerts::EnumString::local_highs_and_lows(Alerts::LocalHighsAndLows::Inside), "OptionLocalHighsAndLows"}, 52 }
+	};
+
+	std::unordered_map<int, std::pair<std::string, std::string>> TagDBInterface::intToTag;
+
+	void TagDBInterface::initialize() {
+		// Fill the intToTagMap
+		for (const auto& key : tagToInt) {
+			intToTag[key.second] = key.first;
+		}
+	}
+
+	StaticInitializer staticInitializerInstance;
 }

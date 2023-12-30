@@ -23,8 +23,7 @@ namespace OptionDB {
 		//================================================
 
 		inline void initializeTagTable(nanodbc::connection conn) {
-			TagDBInterface::AlertTagDBInterface dbi;
-			std::unordered_map<std::pair<string, string>, int, TagDBInterface::PairHash> ti = dbi.tagInterface();
+			std::unordered_map<std::pair<string, string>, int, Alerts::PairHash> ti = Alerts::TagDBInterface::tagToInt;
 
 			try {
 				nanodbc::statement stmt(conn);

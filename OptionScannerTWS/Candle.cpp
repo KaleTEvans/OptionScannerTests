@@ -78,5 +78,21 @@ CandleTags::CandleTags(Candle c, TimeFrame tf, Alerts::OptionType optType, Alert
 
 CandleTags::CandleTags(Candle c, std::vector<int> tags) : c(c), tags_(tags) 
 {
+    std::string tf = Alerts::TagDBInterface::intToTag[tags[0]].first;
+    std::string opttype = Alerts::TagDBInterface::intToTag[tags[1]].first;
+    std::string tod = Alerts::TagDBInterface::intToTag[tags[2]].first;
+    std::string rtm = Alerts::TagDBInterface::intToTag[tags[3]].first;
+    std::string volstdev = Alerts::TagDBInterface::intToTag[tags[4]].first;
+    std::string volthresh = Alerts::TagDBInterface::intToTag[tags[5]].first;
+    std::string opt_dhl = Alerts::TagDBInterface::intToTag[tags[6]].first;
+    std::string opt_lhl = Alerts::TagDBInterface::intToTag[tags[7]].first;
 
+    tf_ = str_to_tf(tf);
+    optType_ = Alerts::EnumString::str_to_option_type(opttype);
+    tod_ = Alerts::EnumString::str_to_tod(tod);
+    rtm_ = Alerts::EnumString::str_to_rtm(rtm);
+    volStDev_ = Alerts::EnumString::str_to_vol_stdev(volstdev);
+    volThresh_ = Alerts::EnumString::str_to_vol_thresh(volthresh);
+    optDHL_ = Alerts::EnumString::str_to_daily_hl(opt_dhl);
+    optLHL_ = Alerts::EnumString::str_to_local_hl(opt_lhl);
 }
