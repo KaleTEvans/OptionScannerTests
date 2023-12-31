@@ -72,11 +72,13 @@ void Candle::convertUnixToDate() const {
     date_ = date;
 }
 
-CandleTags::CandleTags(Candle c, TimeFrame tf, Alerts::OptionType optType, Alerts::TimeOfDay tod, Alerts::RelativeToMoney rtm,
-    Alerts::VolumeStDev volStDev, Alerts::VolumeThreshold volThresh, Alerts::DailyHighsAndLows optDHL, Alerts::LocalHighsAndLows optLHL) :
-    c(c), tf_(tf), optType_(optType), tod_(tod), rtm_(rtm), volStDev_(volStDev), volThresh_(volThresh), optDHL_(optDHL), optLHL_(optLHL) {}
+CandleTags::CandleTags(std::shared_ptr<Candle> c, TimeFrame tf, Alerts::OptionType optType, Alerts::TimeOfDay tod,
+    Alerts::VolumeStDev volStDev, Alerts::VolumeThreshold volThresh, Alerts::PriceDelta optPriceDelta,
+    Alerts::DailyHighsAndLows optDHL, Alerts::LocalHighsAndLows optLHL) :
+    c(c), tf_(tf), optType_(optType), tod_(tod), optPriceDelta_(optPriceDelta),
+    volStDev_(volStDev), volThresh_(volThresh), optDHL_(optDHL), optLHL_(optLHL) {}
 
-CandleTags::CandleTags(Candle c, std::vector<int> tags) : c(c), tags_(tags) 
+CandleTags::CandleTags(std::shared_ptr<Candle> c, std::vector<int> tags) : c(c), tags_(tags)
 {
     std::string tf = Alerts::TagDBInterface::intToTag[tags[0]].first;
     std::string opttype = Alerts::TagDBInterface::intToTag[tags[1]].first;
@@ -84,8 +86,12 @@ CandleTags::CandleTags(Candle c, std::vector<int> tags) : c(c), tags_(tags)
     std::string rtm = Alerts::TagDBInterface::intToTag[tags[3]].first;
     std::string volstdev = Alerts::TagDBInterface::intToTag[tags[4]].first;
     std::string volthresh = Alerts::TagDBInterface::intToTag[tags[5]].first;
-    std::string opt_dhl = Alerts::TagDBInterface::intToTag[tags[6]].first;
-    std::string opt_lhl = Alerts::TagDBInterface::intToTag[tags[7]].first;
+    std::string priceDelta = Alerts::TagDBInterface::intToTag[tags[6]].first;
+    std::string opt_dhl = Alerts::TagDBInterface::intToTag[tags[7]].first;
+    std::string opt_lhl = Alerts::TagDBInterface::intToTag[tags[8]].first;
+    std::string underlyingPriceDelta = Alerts::TagDBInterface::intToTag[tags[9]].first;
+    std::string u_dhl = Alerts::TagDBInterface::intToTag[tags[10]].first;
+    std::string u_lhl = Alerts::TagDBInterface::intToTag[tags[11]].first;
 
     tf_ = str_to_tf(tf);
     optType_ = Alerts::EnumString::str_to_option_type(opttype);
@@ -93,17 +99,31 @@ CandleTags::CandleTags(Candle c, std::vector<int> tags) : c(c), tags_(tags)
     rtm_ = Alerts::EnumString::str_to_rtm(rtm);
     volStDev_ = Alerts::EnumString::str_to_vol_stdev(volstdev);
     volThresh_ = Alerts::EnumString::str_to_vol_thresh(volthresh);
+    optPriceDelta_ = Alerts::EnumString::str_to_price_delta(priceDelta);
     optDHL_ = Alerts::EnumString::str_to_daily_hl(opt_dhl);
     optLHL_ = Alerts::EnumString::str_to_local_hl(opt_lhl);
+    underlyingPriceDelta_ = Alerts::EnumString::str_to_price_delta(underlyingPriceDelta);
+    underlyingDHL_ = Alerts::EnumString::str_to_daily_hl(u_dhl);
+    underlyingLHL_ = Alerts::EnumString::str_to_local_hl(u_lhl);
 }
 
+void CandleTags::addUnderlyingTags(Alerts::RelativeToMoney rtm, Alerts::PriceDelta pd, Alerts::DailyHighsAndLows DHL, Alerts::LocalHighsAndLows LHL) {
+    rtm_ = rtm;
+    underlyingPriceDelta_ = pd;
+    underlyingDHL_ = DHL;
+    underlyingLHL_ = LHL;
+}
 
-// Candle Tag Accessors
+// Accessors
 TimeFrame CandleTags::getTimeFrame() const { return tf_; }
 Alerts::OptionType CandleTags::getOptType() const { return optType_; }
 Alerts::TimeOfDay CandleTags::getTOD() const { return tod_; }
 Alerts::RelativeToMoney CandleTags::getRTM() const { return rtm_; }
 Alerts::VolumeStDev CandleTags::getVolStDev() const { return volStDev_; }
 Alerts::VolumeThreshold CandleTags::getVolThresh() const { return volThresh_; }
+Alerts::PriceDelta CandleTags::getOptPriceDelta() const { return optPriceDelta_; }
 Alerts::DailyHighsAndLows CandleTags::getDHL() const { return optDHL_; }
 Alerts::LocalHighsAndLows CandleTags::getLHL() const { return optLHL_; }
+Alerts::PriceDelta CandleTags::getUnderlyingPriceDelta() const { return underlyingPriceDelta_; }
+Alerts::DailyHighsAndLows CandleTags::getUnderlyingDHL() const { return underlyingDHL_; }
+Alerts::LocalHighsAndLows CandleTags::getUnderlyingLHL() const { return underlyingLHL_; }

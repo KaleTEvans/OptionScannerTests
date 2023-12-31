@@ -7,6 +7,7 @@
 #pragma once
 
 #include <iostream>
+#include <memory>
 
 #include "TwsApiL0.h"
 #include "TwsApiDefs.h"
@@ -65,11 +66,18 @@ private:
 // or sent via callback to the alert handler
 class CandleTags {
 public:
-    CandleTags(Candle c, TimeFrame tf, Alerts::OptionType optType, Alerts::TimeOfDay tod, Alerts::RelativeToMoney rtm,
-        Alerts::VolumeStDev volStDev, Alerts::VolumeThreshold volThresh, Alerts::DailyHighsAndLows optDHL, Alerts::LocalHighsAndLows optLHL);
+    CandleTags(std::shared_ptr<Candle> c, TimeFrame tf, Alerts::OptionType optType, Alerts::TimeOfDay tod,
+        Alerts::VolumeStDev volStDev, Alerts::VolumeThreshold volThresh, Alerts::PriceDelta optPriceDelta,
+        Alerts::DailyHighsAndLows optDHL, Alerts::LocalHighsAndLows optLHL);
 
     // Constructor if receiving db data
-    CandleTags(Candle c, std::vector<int> tags);
+    CandleTags(std::shared_ptr<Candle> c, std::vector<int> tags);
+
+    // Mutator to add underlying tags
+    void addUnderlyingTags(Alerts::RelativeToMoney rtm, Alerts::PriceDelta pd, Alerts::DailyHighsAndLows DHL, Alerts::LocalHighsAndLows LHL);
+
+    // Make the candle a public member 
+    std::shared_ptr<Candle> c;
 
     TimeFrame getTimeFrame() const;
     Alerts::OptionType getOptType() const;
@@ -77,19 +85,29 @@ public:
     Alerts::RelativeToMoney getRTM() const;
     Alerts::VolumeStDev getVolStDev() const;
     Alerts::VolumeThreshold getVolThresh() const;
+    Alerts::PriceDelta getOptPriceDelta() const;
     Alerts::DailyHighsAndLows getDHL() const;
     Alerts::LocalHighsAndLows getLHL() const;
+    Alerts::PriceDelta getUnderlyingPriceDelta() const;
+    Alerts::DailyHighsAndLows getUnderlyingDHL() const;
+    Alerts::LocalHighsAndLows getUnderlyingLHL() const;
 
 private:
-    Candle c;
     std::vector<int> tags_{};
 
     TimeFrame tf_;
     Alerts::OptionType optType_;
     Alerts::TimeOfDay tod_;
-    Alerts::RelativeToMoney rtm_;
+    
     Alerts::VolumeStDev volStDev_;
     Alerts::VolumeThreshold volThresh_;
+    Alerts::PriceDelta optPriceDelta_;
     Alerts::DailyHighsAndLows optDHL_;
     Alerts::LocalHighsAndLows optLHL_;
+
+    // Tags that rely on underlying price data that will be updated after construction
+    Alerts::RelativeToMoney rtm_{ Alerts::RelativeToMoney::ATM };
+    Alerts::PriceDelta underlyingPriceDelta_{ Alerts::PriceDelta::Under1 };
+    Alerts::DailyHighsAndLows underlyingDHL_{ Alerts::DailyHighsAndLows::Inside };
+    Alerts::LocalHighsAndLows underlyingLHL_{ Alerts::LocalHighsAndLows::Inside };
 };

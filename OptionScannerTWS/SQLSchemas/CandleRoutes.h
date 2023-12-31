@@ -29,11 +29,32 @@ namespace OptionDB {
 		};
 
 
-		inline void setTable(nanodbc::connection conn) {
+		inline void setTables(nanodbc::connection conn) {
 			try {
-				nanodbc::execute(conn, "DROP TABLE IF EXISTS Candles");
+				nanodbc::execute(conn, "DROP TABLE IF EXISTS UnixValues");
+				nanodbc::execute(conn, "DROP TABLE IF EXISTS UnderlyingCandles");
+				nanodbc::execute(conn, "DROP TABLE IF EXISTS OptionCandles");
 
-				string sql = "CREATE TABLE Candles ("
+				string sql_1 = "CREATE TABLE UnixValues ("
+					"ID INT IDENTITY(1, 1),"
+					"Time INT NOT NULL);";
+
+				string sql_2 = "CREATE TABLE UnderlyingCandles ("
+					"ID IDENTITY(1, 1),"
+					"ReqID INT NOT NULL,"
+					"Date VARCHAR(10),"
+					"Time INT NOT NULL,"
+					"[Open] DECIMAL(16, 3) NOT NULL,"
+					"[Close] DECIMAL(16, 3) NOT NULL,"
+					"High DECIMAL(16, 3) NOT NULL,"
+					"Low DECIMAL(16, 3) NOT NULL,"
+					"TimeFrame INT NOT NULL,"
+
+					"FOREIGN KEY TimeFrame REFERENCES AlertTags(TagID),"
+					"FOREIGN KEY Time REFERENCES UnixValues(Time));";
+					
+
+				string sql_3 = "CREATE TABLE OptionCandles ("
 					"ID INT IDENTITY(1, 1),"
 					"ReqID INT NOT NULL,"
 					"Date VARCHAR(10),"
@@ -42,14 +63,34 @@ namespace OptionDB {
 					"[Close] DECIMAL(16, 3) NOT NULL,"
 					"High DECIMAL(16, 3) NOT NULL,"
 					"Low DECIMAL(16, 3) NOT NULL,"
-					"Volume BIGINT,"
-					"TimeFrame VARCHAR(20),"
-					"CONSTRAINT Alert_Candle UNIQUE (ReqId, Time, TimeFrame));";
+					"Volume BIGINT NOT NULL,"
+					"TimeFrame INT NOT NULL,"
+					"OptionType INT NOT NULL,"
+					"TimeOfDay INT NOT NULL,"
+					"RelativeToMoney INT NOT NULL,"
+					"VolumeStDev INT NOT NULL,"
+					"VolumeThreshold INT NOT NULL,"
+					"OptPriceDelta INT NOT NULL,"
+					"DailyHighLow INT NOT NULL,"
+					"LocalHighLow INT NOT NULL,"
 
-				nanodbc::execute(conn, sql);
+					"FOREIGN KEY Time REFERENCES UnixValues(Time),"
+					"FOREIGN KEY TimeFrame REFERENCES AlertTags(TagID),"
+					"FOREIGN KEY OptionType REFERENCES AlertTags(TagID),"
+					"FOREIGN KEY TimeOfDay REFERENCES AlertTags(TagID),"
+					"FOREIGN KEY RelativeToMoney REFERENCES AlertTags(TagID),"
+					"FOREIGN KEY VolumeStDev REFERENCES AlertTags(TagID),"
+					"FOREIGN KEY VolumeThreshold REFERENCES AlertTags(TagID),"
+					"FOREIGN KEY OptPriceDelta REFERENCES AlertTags(TagID),"
+					"FOREIGN KEY DailyHighLow REFERENCES AlertTags(TagID),"
+					"FOREIGN KEY LocalHighLow REFERENCES AlertTags(TagID));";
+
+				nanodbc::execute(conn, sql_1);
+				nanodbc::execute(conn, sql_2);
+				nanodbc::execute(conn, sql_3);
 
 				//OPTIONSCANNER_DEBUG("Candles Table initialized");
-				std::cout << "Candles Table Initialized" << std::endl;
+				std::cout << "Unix Values and Candles Tables Initialized" << std::endl;
 			}
 			catch (const std::exception& e) {
 				//OPTIONSCANNER_ERROR("Error: {}", e.what());

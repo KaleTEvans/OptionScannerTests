@@ -45,7 +45,7 @@ public:
 
 	// With each incoming candle, we will need to update the vectors for each time frame
 	// This will also update stDevs for each time series
-	void updateData(std::unique_ptr<Candle> c, double underlyingRefPrice = 0);
+	void updateData(std::unique_ptr<Candle> c);
 
 	// Accessors
 	TickerId contractId() const;
@@ -79,14 +79,6 @@ private:
 	std::shared_ptr<OptionDB::DatabaseManager> dbm_{ nullptr };
 	bool dbConnect{ false };
 
-	Alerts::OptionType optType_;
-	Alerts::TimeOfDay tod_;
-	Alerts::RelativeToMoney rtm_;
-	Alerts::VolumeStDev volStDev_;
-	Alerts::VolumeThreshold volThresh_;
-	Alerts::DailyHighsAndLows optDHL_;
-	Alerts::LocalHighsAndLows optLHL_;
-
 	vector<std::shared_ptr<Candle>> fiveSecCandles_;
 	vector<std::shared_ptr<Candle>> thirtySecCandles_;
 	vector<std::shared_ptr<Candle>> oneMinCandles_;
@@ -118,6 +110,15 @@ private:
 	bool nearLocalHigh;
 	bool nearLocalLow;
 
+	// Tags that will be tracked and added to new candles
+	Alerts::OptionType optType_{ Alerts::OptionType::Call };
+	Alerts::TimeOfDay tod_{ Alerts::TimeOfDay::Hour1 };
+	Alerts::VolumeStDev volStDev_{ Alerts::VolumeStDev::LowVol };
+	Alerts::VolumeThreshold volThresh_{ Alerts::VolumeThreshold::LowVol };
+	Alerts::PriceDelta priceDelta_{ Alerts::PriceDelta::Under1 };
+	Alerts::DailyHighsAndLows DHL_{ Alerts::DailyHighsAndLows::Inside };
+	Alerts::LocalHighsAndLows LHL_{ Alerts::LocalHighsAndLows::Inside };
+
 	// Update various trackers
 	// Update respective containers with new candles and stdev values
 	void updateContainers(std::shared_ptr<Candle> c, TimeFrame tf);
@@ -125,8 +126,12 @@ private:
 	void updateComparisons();
 	void updateLocalMinMax(std::shared_ptr<Candle> c);
 
+	// Update Tag Values
+	void updateTimeOfDay(long unixTime); 
+	void updateDeviationTags(double priceStDev, double volStDev, long volume);
+
 	// For data keeping purposes
-	vector<std::pair<long, long long>> cumulativeVolume_;
+	vector<std::pair<long, long long>> cumulativeVolume_{ 0 };
 
 	// We will also need to keep a connection open for the underlying price
 	// Will cancel all alerts when an underlying security is being passed through

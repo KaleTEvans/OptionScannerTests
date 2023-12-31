@@ -26,7 +26,7 @@ namespace OptionDB {
 	}
 
 	void DatabaseManager::setCandleTables() {
-		CandleTables::setTable(*conn_);
+		CandleTables::setTables(*conn_);
 	}
 
 	void DatabaseManager::setAlertTables() {

@@ -32,11 +32,19 @@ ContractData::ContractData(TickerId reqId, std::unique_ptr<Candle> initData) :
 	fiveSecCandles_.push_back(initCandle);
 
 	// Update the standard deviation class for the first 5 sec candle
-	sdPrice5Sec_.addValue(initCandle->high() - initCandle->low());
+	sdPrice5Sec_.addValue((initCandle->high() / initCandle->low()) - 1);
 	sdVol5Sec_.addValue(initCandle->volume());
 
-	// If reqId is 1234, mark as underlying
+	// If reqId is 1234, mark as underlying, otherwise, set option enum
 	if (initCandle->reqId() == 1234) isUnderlying_ = true;
+	else {
+		if (initCandle->reqId() % 5 == 0) {
+			optType_ = Alerts::OptionType::Call;
+		}
+		else {
+			optType_ = Alerts::OptionType::Put;
+		}
+	}
 }
 
 // Initiate the SQL connection variable to add db insertion after each candle created
@@ -48,13 +56,16 @@ void ContractData::setupDatabaseManager(std::shared_ptr<OptionDB::DatabaseManage
 // The input data function will be called each time a new candle is received, and will be where we 
 // update each time series vector, stdev and mean. The chaining of if statements ensures that
 // each vector has enough values to fill the next timeframe
-void ContractData::updateData(std::unique_ptr<Candle> c, double underlyingRefPrice) {
+void ContractData::updateData(std::unique_ptr<Candle> c) {
 	//============================================================
 	// 5 Second Candle Options
 	// ===========================================================
 	// Switch to shared pointer
 	std::shared_ptr<Candle> fiveSec{ std::move(c) };
 	updateContainers(fiveSec, TimeFrame::FiveSecs);
+
+	// Update time of day tag
+	updateTimeOfDay(fiveSec->time());
 
 	// Post to db
 	if (dbConnect) dbm_->addToInsertionQueue(fiveSec, TimeFrame::FiveSecs);
@@ -64,6 +75,9 @@ void ContractData::updateData(std::unique_ptr<Candle> c, double underlyingRefPri
 	dailyLow_ = min(dailyLow_, fiveSec->low());
 
 	updateComparisons();
+
+	std::shared_ptr<CandleTags> fiveSecTags = std::make_shared<CandleTags>(fiveSec, TimeFrame::FiveSecs, optType_, tod_,
+		volStDev_, volThresh_, priceDelta_, DHL_, LHL_);
 
 	///////////////////////// 5 Second Alert Options ///////////////////////////////
 	if (sdVol5Sec_.checkDeviation(fiveSec->volume(), 2) && sdVol5Sec_.sum() > 9 && !isUnderlying_) {
@@ -223,27 +237,55 @@ StandardDeviation ContractData::volStDev(TimeFrame tf) {
 //==============================================
 
 void ContractData::updateContainers(std::shared_ptr<Candle> c, TimeFrame tf) {
+	double priceStDev = 0;
+	double volStDev = 0;
+	long volume = 0;
+
 	switch (tf)
 	{
 	case TimeFrame::FiveSecs:
 		fiveSecCandles_.push_back(c);
-		sdPrice5Sec_.addValue(c->high() - c->low());
+		sdPrice5Sec_.addValue((c->high() / c->low()) - 1);
 		sdVol5Sec_.addValue(c->volume());
+		
+		priceStDev = sdPrice5Sec_.numStDev((c->high() / c->low()) - 1);
+		volStDev = sdVol5Sec_.numStDev(c->volume());
+		volume = c->volume();
+
+		updateDeviationTags(priceStDev, volStDev, volume);
 		break;
 	case TimeFrame::ThirtySecs:
 		thirtySecCandles_.push_back(c);
-		sdPrice30Sec_.addValue(c->high() - c->low());
+		sdPrice30Sec_.addValue((c->high() / c->low()) - 1);
 		sdVol30Sec_.addValue(c->volume());
+
+		priceStDev = sdPrice30Sec_.numStDev((c->high() / c->low()) - 1);
+		volStDev = sdVol30Sec_.numStDev(c->volume());
+		volume = c->volume();
+
+		updateDeviationTags(priceStDev, volStDev, volume);
 		break;
 	case TimeFrame::OneMin:
 		oneMinCandles_.push_back(c);
-		sdPrice1Min_.addValue(c->high() - c->low());
+		sdPrice1Min_.addValue((c->high() / c->low()) - 1);
 		sdVol1Min_.addValue(c->volume());
+
+		priceStDev = sdPrice1Min_.numStDev((c->high() / c->low()) - 1);
+		volStDev = sdVol1Min_.numStDev(c->volume());
+		volume = c->volume();
+
+		updateDeviationTags(priceStDev, volStDev, volume);
 		break;
 	case TimeFrame::FiveMin:
 		fiveMinCandles_.push_back(c);
-		sdPrice5Min_.addValue(c->high() - c->low());
+		sdPrice5Min_.addValue((c->high() / c->low()) - 1);
 		sdVol5Min_.addValue(c->volume());
+
+		priceStDev = sdPrice5Min_.numStDev((c->high() / c->low()) - 1);
+		volStDev = sdVol5Min_.numStDev(c->volume());
+		volume = c->volume();
+
+		updateDeviationTags(priceStDev, volStDev, volume);
 		break;
 	}
 }
@@ -269,17 +311,41 @@ void ContractData::updateComparisons() {
 	double percentDiff = 0.1;
 
 	// Check values against the underlying price, will use 0.1% difference
-	if (isWithinXPercent(lastPrice, dailyHigh_, percentDiff)) nearDailyHigh = true;
-	else nearDailyHigh = false;
+	if (isWithinXPercent(lastPrice, dailyHigh_, percentDiff)) {
+		nearDailyHigh = true;
+		DHL_ = Alerts::DailyHighsAndLows::NDH;
+	}
+	else {
+		nearDailyHigh = false;
+		DHL_ = Alerts::DailyHighsAndLows::Inside;
+	}
 
-	if (isWithinXPercent(lastPrice, dailyLow_, percentDiff)) nearDailyLow = true;
-	else nearDailyLow = false;
+	if (isWithinXPercent(lastPrice, dailyLow_, percentDiff)) {
+		nearDailyLow = true;
+		DHL_ = Alerts::DailyHighsAndLows::NDL;
+	}
+	else {
+		nearDailyLow = false;
+		DHL_ = Alerts::DailyHighsAndLows::Inside;
+	}
 
-	if (isWithinXPercent(lastPrice, localHigh_, percentDiff) || lastPrice > localHigh_) nearLocalHigh = true;
-	else nearLocalHigh = false;
+	if (isWithinXPercent(lastPrice, localHigh_, percentDiff) || lastPrice > localHigh_) {
+		nearLocalHigh = true;
+		LHL_ = Alerts::LocalHighsAndLows::NLH;
+	}
+	else {
+		nearLocalHigh = false;
+		LHL_ = Alerts::LocalHighsAndLows::Inside;
+	}
 
-	if (isWithinXPercent(lastPrice, localLow_, percentDiff) || lastPrice < localLow_) nearLocalLow = true;
-	else nearLocalLow = false;
+	if (isWithinXPercent(lastPrice, localLow_, percentDiff) || lastPrice < localLow_) {
+		nearLocalLow = true;
+		LHL_ = Alerts::LocalHighsAndLows::NLL;
+	}
+	else {
+		nearLocalLow = false;
+		LHL_ = Alerts::LocalHighsAndLows::Inside;
+	}
 }
 
 void ContractData::updateLocalMinMax(std::shared_ptr<Candle> c) {
@@ -293,4 +359,73 @@ void ContractData::updateLocalMinMax(std::shared_ptr<Candle> c) {
 		tempHigh_ = 0;
 		tempLow_ = 10000;
 	}
+}
+
+//===========================================================
+// Tag Update Functions
+//===========================================================
+
+void ContractData::updateTimeOfDay(long unixTime) {
+	
+	std::time_t currentTime;
+	currentTime = static_cast<time_t>(unixTime);
+
+	// Convert the current time to local time
+	tm* localTime = std::localtime(&currentTime);
+
+	// Get the current hour and minute
+	int currentHour = localTime->tm_hour;
+	int currentMinute = localTime->tm_min;
+
+	// Calculate the time in minutes since 8:30 AM
+	int minutesSince830AM = (currentHour - 8) * 60 + currentMinute - 30;
+
+	// Calculate the slot number (1 to 7)
+	int slotNumber = minutesSince830AM / 60 + 1;
+
+	switch (slotNumber)
+	{
+	case 1:
+		tod_ = Alerts::TimeOfDay::Hour1;
+		break;
+	case 2:
+		tod_ = Alerts::TimeOfDay::Hour2;
+		break;
+	case 3:
+		tod_ = Alerts::TimeOfDay::Hour3;
+		break;
+	case 4:
+		tod_ = Alerts::TimeOfDay::Hour4;
+		break;
+	case 5:
+		tod_ = Alerts::TimeOfDay::Hour5;
+		break;
+	case 6:
+		tod_ = Alerts::TimeOfDay::Hour6;
+		break;
+	case 7:
+		tod_ = Alerts::TimeOfDay::Hour7;
+		break;
+	default:
+		std::cout << "Error occured calculating time of day" << std::endl;
+		break;
+	}
+}
+
+void ContractData::updateDeviationTags(double priceStDev, double volStDev, long volume) {
+	if (priceStDev < 1) priceDelta_ = Alerts::PriceDelta::Under1;
+	if (priceStDev >= 1 && priceStDev <= 2) priceDelta_ = Alerts::PriceDelta::Under2;
+	if (priceStDev > 2) priceDelta_ = Alerts::PriceDelta::Over2;
+
+	if (volStDev <= 1) volStDev_ = Alerts::VolumeStDev::LowVol;
+	if (volStDev > 1 && volStDev <= 2) volStDev_ = Alerts::VolumeStDev::Over1;
+	if (volStDev > 2 && volStDev <= 3) volStDev_ = Alerts::VolumeStDev::Over2;
+	if (volStDev > 3 && volStDev <= 4) volStDev_ = Alerts::VolumeStDev::Over3;
+	if (volStDev > 4) volStDev_ = Alerts::VolumeStDev::Over4;
+
+	if (volume < 100) volThresh_ = Alerts::VolumeThreshold::LowVol;
+	if (volume >= 100 && volume < 250) volThresh_ = Alerts::VolumeThreshold::Vol100;
+	if (volume >= 250 && volume < 500) volThresh_ = Alerts::VolumeThreshold::Vol250;
+	if (volume >= 500 && volume < 1000) volThresh_ = Alerts::VolumeThreshold::Vol500;
+	if (volume >= 1000) volThresh_ = Alerts::VolumeThreshold::Vol1000;
 }
