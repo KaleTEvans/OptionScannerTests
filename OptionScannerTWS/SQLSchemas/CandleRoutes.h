@@ -11,7 +11,59 @@ using std::string;
 
 namespace OptionDB {
 
-	namespace CandleTables {
+	namespace UnixTable {
+		inline void setTable(nanodbc::connection conn) {
+			try {
+				nanodbc::execute(conn, "DROP TABLE IF EXISTS UnixValues");
+
+				string sql = "CREATE TABLE UnixValues ("
+					"ID INT IDENTITY(1, 1),"
+					"Time INT NOT NULL UNIQUE);";
+
+				nanodbc::execute(conn, sql);
+				std::cout << "Unix Table Initialized" << std::endl;
+			}
+			catch (const std::exception& e) {
+				std::cout << "Error: " << e.what() << std::endl;
+			}
+		}
+
+		inline void post(nanodbc::connection conn, long unixTime) {
+			try {
+				nanodbc::statement stmt(conn);
+				stmt.prepare("INSERT INTO UnixValues (Time) VALUES (?)");
+
+				stmt.bind(0, &unixTime);
+				stmt.execute();
+			}
+			catch (const std::exception& e) {
+				std::cout << "Error: " << e.what() << std::endl;
+			}
+		}
+
+		inline std::vector<long> get(nanodbc::connection conn) {
+			std::vector<long> unixValues;
+
+			nanodbc::statement stmt(conn);
+			stmt.prepare("SELECT * FROM UnixValues");
+
+			try {
+				nanodbc::result res = stmt.execute();
+
+				while (res.next()) {
+					long time = res.get<long>("Time");
+					unixValues.push_back(time);
+				}
+			}
+			catch (const std::exception& e) {
+				std::cout << "Error: " << e.what() << std::endl;
+			}
+
+			return unixValues;
+		}
+	}
+
+	namespace UnderlyingTable {
 
 		// This will copy data from the candles directly for db insertion
 		struct CandleForDB {
@@ -28,18 +80,11 @@ namespace OptionDB {
 			long volume_;
 		};
 
-
-		inline void setTables(nanodbc::connection conn) {
+		inline void setTable(nanodbc::connection conn) {
 			try {
-				nanodbc::execute(conn, "DROP TABLE IF EXISTS UnixValues");
 				nanodbc::execute(conn, "DROP TABLE IF EXISTS UnderlyingCandles");
-				nanodbc::execute(conn, "DROP TABLE IF EXISTS OptionCandles");
 
-				string sql_1 = "CREATE TABLE UnixValues ("
-					"ID INT IDENTITY(1, 1),"
-					"Time INT NOT NULL);";
-
-				string sql_2 = "CREATE TABLE UnderlyingCandles ("
+				string sql = "CREATE TABLE UnderlyingCandles ("
 					"ID IDENTITY(1, 1),"
 					"ReqID INT NOT NULL,"
 					"Date VARCHAR(10),"
@@ -48,49 +93,46 @@ namespace OptionDB {
 					"[Close] DECIMAL(16, 3) NOT NULL,"
 					"High DECIMAL(16, 3) NOT NULL,"
 					"Low DECIMAL(16, 3) NOT NULL,"
-					"TimeFrame INT NOT NULL,"
+					"Volume INT,"
+					"TimeFrame VARCHAR(20) NOT NULL,"
 
-					"FOREIGN KEY TimeFrame REFERENCES AlertTags(TagID),"
 					"FOREIGN KEY Time REFERENCES UnixValues(Time));";
-					
 
-				string sql_3 = "CREATE TABLE OptionCandles ("
-					"ID INT IDENTITY(1, 1),"
-					"ReqID INT NOT NULL,"
-					"Date VARCHAR(10),"
-					"Time INT NOT NULL,"
-					"[Open] DECIMAL(16, 3) NOT NULL,"
-					"[Close] DECIMAL(16, 3) NOT NULL,"
-					"High DECIMAL(16, 3) NOT NULL,"
-					"Low DECIMAL(16, 3) NOT NULL,"
-					"Volume BIGINT NOT NULL,"
-					"TimeFrame INT NOT NULL,"
-					"OptionType INT NOT NULL,"
-					"TimeOfDay INT NOT NULL,"
-					"RelativeToMoney INT NOT NULL,"
-					"VolumeStDev INT NOT NULL,"
-					"VolumeThreshold INT NOT NULL,"
-					"OptPriceDelta INT NOT NULL,"
-					"DailyHighLow INT NOT NULL,"
-					"LocalHighLow INT NOT NULL,"
+				nanodbc::execute(conn, sql);
+				std::cout << "Underlying Table Initialized" << std::endl;
+			}
+			catch (const std::exception& e) {
+				std::cout << "Error: " << e.what() << std::endl;
+			}
+		}
 
-					"FOREIGN KEY Time REFERENCES UnixValues(Time),"
-					"FOREIGN KEY TimeFrame REFERENCES AlertTags(TagID),"
-					"FOREIGN KEY OptionType REFERENCES AlertTags(TagID),"
-					"FOREIGN KEY TimeOfDay REFERENCES AlertTags(TagID),"
-					"FOREIGN KEY RelativeToMoney REFERENCES AlertTags(TagID),"
-					"FOREIGN KEY VolumeStDev REFERENCES AlertTags(TagID),"
-					"FOREIGN KEY VolumeThreshold REFERENCES AlertTags(TagID),"
-					"FOREIGN KEY OptPriceDelta REFERENCES AlertTags(TagID),"
-					"FOREIGN KEY DailyHighLow REFERENCES AlertTags(TagID),"
-					"FOREIGN KEY LocalHighLow REFERENCES AlertTags(TagID));";
+		inline void post(nanodbc::connection conn, CandleForDB& candle, TimeFrame tf) {
+			try {
+				nanodbc::statement stmt(conn);
+				stmt.prepare("INSERT INTO UnderlyingCandles (ReqID, Date, Time, [Open], [Close], High, Low, Volume, TimeFrame)"
+					"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
-				nanodbc::execute(conn, sql_1);
-				nanodbc::execute(conn, sql_2);
-				nanodbc::execute(conn, sql_3);
+				int reqId = candle.reqId_;
+				string date = candle.date_.substr(0, 8); // Just get the date, no need for time
+				long time = candle.time_;
+				double open = candle.open_;
+				double close = candle.close_;
+				double high = candle.high_;
+				double low = candle.low_;
+				long volume = candle.volume_;
+				std::string timeframe = time_frame(tf);
 
-				//OPTIONSCANNER_DEBUG("Candles Table initialized");
-				std::cout << "Unix Values and Candles Tables Initialized" << std::endl;
+				stmt.bind(0, &reqId);
+				stmt.bind(1, date.c_str());
+				stmt.bind(2, &time);
+				stmt.bind(3, &open);
+				stmt.bind(4, &close);
+				stmt.bind(5, &high);
+				stmt.bind(6, &low);
+				stmt.bind(7, &volume);
+				stmt.bind(8, timeframe.c_str());
+
+				stmt.execute();
 			}
 			catch (const std::exception& e) {
 				//OPTIONSCANNER_ERROR("Error: {}", e.what());
@@ -98,16 +140,14 @@ namespace OptionDB {
 			}
 		}
 
-		inline std::vector<Candle> get(nanodbc::connection conn, TimeFrame tf, int reqId = 0, string date = "", long time = 0) {
+		inline std::vector<Candle> get(nanodbc::connection conn, TimeFrame tf) {
 			std::vector<Candle> candles;
 			string tfstring = time_frame(tf);
 
 			nanodbc::statement stmt(conn);
 
-			if (reqId == 0 && date == "" && time == 0) {
-				stmt.prepare("SELECT * FROM Candles WHERE TimeFrame = ?");
-				stmt.bind(0, tfstring.c_str());
-			}
+			stmt.prepare("SELECT * FROM UnderlyingCandles WHERE TimeFrame = ?");
+			stmt.bind(0, tfstring.c_str());
 
 			try {
 				nanodbc::result res = stmt.execute();
@@ -134,23 +174,91 @@ namespace OptionDB {
 
 			return candles;
 		}
+	}
 
-		inline void post(nanodbc::connection conn, CandleForDB& candle, TimeFrame tf) {
+	namespace OptionTable {
+
+		inline void setTable(nanodbc::connection conn) {
+			try {
+				nanodbc::execute(conn, "DROP TABLE IF EXISTS OptionCandles");
+
+				string sql = "CREATE TABLE OptionCandles ("
+					"ID INT IDENTITY(1, 1),"
+					"ReqID INT NOT NULL,"
+					"Date VARCHAR(10),"
+					"Time INT NOT NULL,"
+					"[Open] DECIMAL(16, 3) NOT NULL,"
+					"[Close] DECIMAL(16, 3) NOT NULL,"
+					"High DECIMAL(16, 3) NOT NULL,"
+					"Low DECIMAL(16, 3) NOT NULL,"
+					"Volume INT NOT NULL,"
+					"TimeFrame INT NOT NULL,"
+					"OptionType INT NOT NULL,"
+					"TimeOfDay INT NOT NULL,"
+					"RelativeToMoney INT NOT NULL,"
+					"VolumeStDev INT NOT NULL,"
+					"VolumeThreshold INT NOT NULL,"
+					"OptPriceDelta INT NOT NULL,"
+					"DailyHighLow INT NOT NULL,"
+					"LocalHighLow INT NOT NULL,"
+					"UnderlyingPriceDelta INT NOT NULL,"
+					"UnderlyingDailyHighLow INT NOT NULL,"
+					"UnderlyingLocalHighLow INT NOT NULL,"
+
+					"FOREIGN KEY Time REFERENCES UnixValues(Time),"
+					"FOREIGN KEY TimeFrame REFERENCES AlertTags(TagID),"
+					"FOREIGN KEY OptionType REFERENCES AlertTags(TagID),"
+					"FOREIGN KEY TimeOfDay REFERENCES AlertTags(TagID),"
+					"FOREIGN KEY RelativeToMoney REFERENCES AlertTags(TagID),"
+					"FOREIGN KEY VolumeStDev REFERENCES AlertTags(TagID),"
+					"FOREIGN KEY VolumeThreshold REFERENCES AlertTags(TagID),"
+					"FOREIGN KEY OptPriceDelta REFERENCES AlertTags(TagID),"
+					"FOREIGN KEY DailyHighLow REFERENCES AlertTags(TagID),"
+					"FOREIGN KEY LocalHighLow REFERENCES AlertTags(TagID),"
+					"FOREIGN KEY UnderlyingPriceDelta REFERENCES AlertTags(TagID),"
+					"FOREIGN KEY UnderlyingDailyHighLow REFERENCES AlertTags(TagID),"
+					"FOREIGN KEY UnderlyingLocalHighLow REFERENCES AlertTags(TagID));";
+
+				nanodbc::execute(conn, sql);
+
+				//OPTIONSCANNER_DEBUG("Candles Table initialized");
+				std::cout << "Option Table Initialized" << std::endl;
+			}
+			catch (const std::exception& e) {
+				//OPTIONSCANNER_ERROR("Error: {}", e.what());
+				std::cout << "Error: " << e.what() << std::endl;
+			}
+		}
+
+		inline void post(nanodbc::connection conn, std::shared_ptr<CandleTags> candle) {
 			try {
 				nanodbc::statement stmt(conn);
-				stmt.prepare("INSERT INTO Candles (ReqID, Date, Time, [Open], [Close], High, Low, Volume, TimeFrame)"
-					"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+				stmt.prepare("INSERT INTO OptionCandles (ReqID, Date, Time, [Open], [Close], High, Low, Volume, TimeFrame,"
+					"OptionType, TimeOfDay, RelativeToMoney, VolumeStDev, VolumeThreshold, OptPriceDelta, DailyHighLow, LocalHighLow,"
+					"UnderlyingPriceDelta, UnderlyingDailyHighLow, UnderlyingLocalHighLow"
+					"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
-				int reqId = candle.reqId_;
-				string date = candle.date_.substr(0, 8); // Just get the date, no need for time
-				long time = candle.time_;
-				double open = candle.open_;
-				double close = candle.close_;
-				double high = candle.high_;
-				double low = candle.low_;
-				long volume = candle.volume_;
-				string timeframe = time_frame(tf);
-				
+				int reqId = candle->candle.reqId();
+				string date = candle->candle.date();
+				long time = candle->candle.time();
+				double open = candle->candle.open();
+				double close = candle->candle.close();
+				double high = candle->candle.high();
+				double low = candle->candle.low();
+				long volume = candle->candle.volume();
+				int timeFrame = Alerts::TagDBInterface::tagToInt[{time_frame(candle->getTimeFrame()), Alerts::EnumString::tag_category(Alerts::TagCategory::TimeFrame)}];
+				int optionType = Alerts::TagDBInterface::tagToInt[{Alerts::EnumString::option_type(candle->getOptType()), Alerts::EnumString::tag_category(Alerts::TagCategory::OptionType)}];
+				int timeOfDay = Alerts::TagDBInterface::tagToInt[{Alerts::EnumString::time_of_day(candle->getTOD()), Alerts::EnumString::tag_category(Alerts::TagCategory::TimeOfDay)}];
+				int relativeToMoney = Alerts::TagDBInterface::tagToInt[{Alerts::EnumString::relative_to_money(candle->getRTM()), Alerts::EnumString::tag_category(Alerts::TagCategory::RelativeToMoney)}];
+				int volumeStDev = Alerts::TagDBInterface::tagToInt[{Alerts::EnumString::vol_st_dev(candle->getVolStDev()), Alerts::EnumString::tag_category(Alerts::TagCategory::VolumeStDev)}];
+				int volumeThreshold = Alerts::TagDBInterface::tagToInt[{Alerts::EnumString::vol_threshold(candle->getVolThresh()), Alerts::EnumString::tag_category(Alerts::TagCategory::VolumeThreshold)}];
+				int optPriceDelta = Alerts::TagDBInterface::tagToInt[{Alerts::EnumString::price_delta(candle->getOptPriceDelta()), Alerts::EnumString::tag_category(Alerts::TagCategory::OptionPriceDelta)}];
+				int dailyHighLow = Alerts::TagDBInterface::tagToInt[{Alerts::EnumString::daily_highs_and_lows(candle->getDHL()), Alerts::EnumString::tag_category(Alerts::TagCategory::OptionDailyHighsAndLows)}];
+				int localHighLow = Alerts::TagDBInterface::tagToInt[{Alerts::EnumString::local_highs_and_lows(candle->getLHL()), Alerts::EnumString::tag_category(Alerts::TagCategory::OptionLocalHighsAndLows)}];
+				int underlyingPriceDelta = Alerts::TagDBInterface::tagToInt[{Alerts::EnumString::price_delta(candle->getUnderlyingPriceDelta()), Alerts::EnumString::tag_category(Alerts::TagCategory::UnderlyingPriceDelta)}];
+				int underlyingDHL = Alerts::TagDBInterface::tagToInt[{Alerts::EnumString::daily_highs_and_lows(candle->getUnderlyingDHL()), Alerts::EnumString::tag_category(Alerts::TagCategory::UnderlyingDailyHighsAndLows)}];
+				int underlyingLHL = Alerts::TagDBInterface::tagToInt[{Alerts::EnumString::local_highs_and_lows(candle->getUnderlyingLHL()), Alerts::EnumString::tag_category(Alerts::TagCategory::UnderlyingLocalHighsAndLows)}];
+
 				stmt.bind(0, &reqId);
 				stmt.bind(1, date.c_str());
 				stmt.bind(2, &time);
@@ -159,7 +267,18 @@ namespace OptionDB {
 				stmt.bind(5, &high);
 				stmt.bind(6, &low);
 				stmt.bind(7, &volume);
-				stmt.bind(8, timeframe.c_str());
+				stmt.bind(8, &timeFrame);
+				stmt.bind(9, &optionType);
+				stmt.bind(10, &timeOfDay);
+				stmt.bind(11, &relativeToMoney);
+				stmt.bind(12, &volumeStDev);
+				stmt.bind(13, &volumeThreshold);
+				stmt.bind(14, &optPriceDelta);
+				stmt.bind(15, &dailyHighLow);
+				stmt.bind(16, &localHighLow);
+				stmt.bind(17, &underlyingPriceDelta);
+				stmt.bind(18, &underlyingDHL);
+				stmt.bind(19, &underlyingLHL);
 
 				stmt.execute();
 			}
@@ -169,36 +288,52 @@ namespace OptionDB {
 			}
 		}
 
-		inline void remove(nanodbc::connection conn, string& date, TimeFrame tf) {
-			try {
-				string tfstring = time_frame(tf);
-				nanodbc::statement stmt(conn);
-				stmt.prepare("DELETE FROM Candles WHERE Date = ? AND TimeFrame = ?");
+		inline std::vector<CandleTags> get(nanodbc::connection conn) {
+			std::vector<CandleTags> candles;
 
-				stmt.bind(0, date.c_str());
-				stmt.bind(0, tfstring.c_str());
-				stmt.execute();
+			nanodbc::statement stmt(conn);
+
+			stmt.prepare("SELECT * FROM UnderlyingCandles");
+
+			try {
+				nanodbc::result res = stmt.execute();
+
+				while (res.next()) {
+					TickerId reqId = res.get<TickerId>("ReqID");
+					IBString date = res.get<nanodbc::string>("Date");
+					long time = res.get<long>("Time");
+					double open = res.get<double>("Open");
+					double high = res.get<double>("High");
+					double low = res.get<double>("Low");
+					double close = res.get<double>("Close");
+					long volume = res.get<long>("Volume");
+					int timeFrame = res.get<int>("TimeFrame");
+					int optionType = res.get<int>("OptionType");
+					int timeOfDay = res.get<int>("TimeOfDay");
+					int relativeToMoney = res.get<int>("RelativeToMoney");
+					int volumeStDev = res.get<int>("VolumeStDev");
+					int volumeThreshold = res.get<int>("VolumeThreshold");
+					int optPriceDelta = res.get<int>("OptPriceDelta");
+					int dailyHighLow = res.get<int>("DailyHighLow");
+					int localHighLow = res.get<int>("LocalHighLow");
+					int underlyingPriceDelta = res.get<int>("UnderlyingPriceDelta");
+					int underlyingDHL = res.get<int>("UnderlyingDailyHighLow");
+					int underlyingLHL = res.get<int>("UnderlyingLocalHighLow");
+
+					vector<int> tags = { timeFrame, optionType, timeOfDay, relativeToMoney, volumeStDev,
+						volumeThreshold, optPriceDelta, dailyHighLow, localHighLow, underlyingPriceDelta,
+						underlyingDHL, underlyingLHL };
+					std::shared_ptr<Candle> c = std::make_shared<Candle>(reqId, time, open, high, low, close, volume);
+					CandleTags ct(c, tags);
+					candles.push_back(ct);
+				}
 			}
 			catch (const std::exception& e) {
 				//OPTIONSCANNER_ERROR("Error: {}", e.what());
 				std::cout << "Error: " << e.what() << std::endl;
 			}
-		}
 
-		inline void remove(nanodbc::connection conn, long time, TimeFrame tf) {
-			try {
-				string tfstring = time_frame(tf);
-				nanodbc::statement stmt(conn);
-				stmt.prepare("DELETE FROM Candles WHERE Time = ? AND TimeFrame = ?");
-
-				stmt.bind(0, &time);
-				stmt.bind(1, tfstring.c_str());
-				stmt.execute();
-			}
-			catch (const std::exception& e) {
-				//OPTIONSCANNER_ERROR("Error: {}", e.what());
-				std::cout << "Error: " << e.what() << std::endl;
-			}
+			return candles;
 		}
 	}
 }

@@ -7,7 +7,7 @@
 #pragma once
 
 #include <iostream>
-#include <memory>
+#include <mutex>
 
 #include "TwsApiL0.h"
 #include "TwsApiDefs.h"
@@ -28,6 +28,8 @@ public:
     Candle(TickerId reqId, long time, double open, double high, double low, double close, long volume);
 
     Candle();
+
+    Candle(const Candle& c); // Copy constructor
 
     TickerId reqId() const;
     IBString date() const;
@@ -77,7 +79,7 @@ public:
     void addUnderlyingTags(Alerts::RelativeToMoney rtm, Alerts::PriceDelta pd, Alerts::DailyHighsAndLows DHL, Alerts::LocalHighsAndLows LHL);
 
     // Make the candle a public member 
-    std::shared_ptr<Candle> c;
+    Candle candle;
 
     TimeFrame getTimeFrame() const;
     Alerts::OptionType getOptType() const;
@@ -95,15 +97,15 @@ public:
 private:
     std::vector<int> tags_{};
 
-    TimeFrame tf_;
-    Alerts::OptionType optType_;
-    Alerts::TimeOfDay tod_;
+    TimeFrame tf_{ TimeFrame::FiveSecs };
+    Alerts::OptionType optType_{ Alerts::OptionType::Call };
+    Alerts::TimeOfDay tod_{ Alerts::TimeOfDay::Hour1 };
     
-    Alerts::VolumeStDev volStDev_;
-    Alerts::VolumeThreshold volThresh_;
-    Alerts::PriceDelta optPriceDelta_;
-    Alerts::DailyHighsAndLows optDHL_;
-    Alerts::LocalHighsAndLows optLHL_;
+    Alerts::VolumeStDev volStDev_{ Alerts::VolumeStDev::LowVol };
+    Alerts::VolumeThreshold volThresh_{ Alerts::VolumeThreshold::LowVol };
+    Alerts::PriceDelta optPriceDelta_{ Alerts::PriceDelta::Under1 };
+    Alerts::DailyHighsAndLows optDHL_{ Alerts::DailyHighsAndLows::Inside };
+    Alerts::LocalHighsAndLows optLHL_{ Alerts::LocalHighsAndLows::Inside };
 
     // Tags that rely on underlying price data that will be updated after construction
     Alerts::RelativeToMoney rtm_{ Alerts::RelativeToMoney::ATM };

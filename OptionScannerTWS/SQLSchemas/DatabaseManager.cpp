@@ -19,14 +19,32 @@ namespace OptionDB {
 		if (dbInsertionThread.joinable()) dbInsertionThread.join();
 	}
 
-	void DatabaseManager::addToInsertionQueue(std::shared_ptr<Candle> candle, TimeFrame tf) {
+	void DatabaseManager::addToInsertionQueue(std::shared_ptr<CandleTags> ct) {
+		candleProcessingQueue.push(ct);
+	}
+
+	void DatabaseManager::addToInsertionQueue(std::shared_ptr<Candle> c, TimeFrame tf) {
 		std::unique_lock<std::mutex> lock(queueMtx);
-		candleQueue.push({ candle, tf });
-		cv.notify_one();
+		
+		// Copy data into underlyingQueue for insertion
+		UnderlyingTable::CandleForDB candle(
+			c->reqId(),
+			c->date(),
+			c->time(),
+			c->open(),
+			c->high(),
+			c->low(),
+			c->close(),
+			c->volume()
+		);
+
+		underlyingQueue.push({ candle, tf });
 	}
 
 	void DatabaseManager::setCandleTables() {
-		CandleTables::setTables(*conn_);
+		UnixTable::setTable(*conn_);
+		UnderlyingTable::setTable(*conn_);
+		OptionTable::setTable(*conn_);
 	}
 
 	void DatabaseManager::setAlertTables() {
@@ -37,37 +55,33 @@ namespace OptionDB {
 	}
 
 	void DatabaseManager::candleInsertionLoop() {
-		std::queue<std::pair<CandleTables::CandleForDB, TimeFrame>> buffer;
 
 		while (!stopInsertion) {
 			std::unique_lock<std::mutex> lock(queueMtx);
 			// wait for data or exit signal
 			cv.wait(lock, [this]() {
-				return !candleQueue.empty() || stopInsertion;
+				return !candleProcessingQueue.empty() || !underlyingQueue.empty() || stopInsertion;
 			});
 
 			if (stopInsertion) break;
 
-			// Copy data into db candle structure for insertion
-			CandleTables::CandleForDB c(
-				candleQueue.front().first->reqId(),
-				candleQueue.front().first->date(),
-				candleQueue.front().first->time(),
-				candleQueue.front().first->open(),
-				candleQueue.front().first->high(),
-				candleQueue.front().first->low(),
-				candleQueue.front().first->close(),
-				candleQueue.front().first->volume()
-			);
-
-			buffer.push({ c, candleQueue.front().second });
-			candleQueue.pop();
-
 			lock.unlock();
 
-			while (!buffer.empty()) {
-				CandleTables::post(*conn_, buffer.front().first, buffer.front().second);
-				buffer.pop();
+			while (!candleProcessingQueue.empty() || !underlyingQueue.empty()) {
+
+				if (!candleProcessingQueue.empty()) {
+					OptionTable::post(*conn_, candleProcessingQueue.front());
+					candleProcessingQueue.pop();
+				}
+
+				if (!underlyingQueue.empty()) {
+					long unixTime = underlyingQueue.front().first.time_;
+
+					UnderlyingTable::post(*conn_, underlyingQueue.front().first, underlyingQueue.front().second);
+					underlyingQueue.pop();
+
+					UnixTable::post(*conn_, unixTime);
+				}
 			}
 		}
 	}

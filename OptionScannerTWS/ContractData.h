@@ -1,14 +1,4 @@
-//==============================================================================
-// Contract Data will perform a variety of functions for each contract under the 
-// current scope of strikes. These will inlcude:
-//	*Receiving 5 second interval data from the wrapper and organizing into 
-//		5 sec, 30 sec, 1 min and 5 min candles
-//	*Updating the standard deviation of difference in high and low of price
-//		and of the volume for each candle
-//	*Outliers in the stdev, which will be defined incrementally, will send out
-//		alerts, via logging or other methods
-//	*All data will be stored for historical analysis
-//==============================================================================
+
 #define _CRT_SECURE_NO_WARNINGS
 
 #pragma once
@@ -35,6 +25,39 @@ using std::pair;
 
 // Helper function for combining candles
 std::shared_ptr<Candle> createNewBars(int id, int increment, const vector<std::shared_ptr<Candle>> data);
+
+// Contains vol and price tags for each timeframe
+struct VolAndPriceTags {
+	Alerts::VolumeStDev volStDev5Sec{ Alerts::VolumeStDev::LowVol };
+	Alerts::VolumeThreshold volThresh5Sec{ Alerts::VolumeThreshold::LowVol };
+	Alerts::PriceDelta priceDelta5Sec{ Alerts::PriceDelta::Under1 };
+
+	Alerts::VolumeStDev volStDev30Sec{ Alerts::VolumeStDev::LowVol };
+	Alerts::VolumeThreshold volThresh30Sec{ Alerts::VolumeThreshold::LowVol };
+	Alerts::PriceDelta priceDelta30Sec{ Alerts::PriceDelta::Under1 };
+
+	Alerts::VolumeStDev volStDev1Min{ Alerts::VolumeStDev::LowVol };
+	Alerts::VolumeThreshold volThresh1Min{ Alerts::VolumeThreshold::LowVol };
+	Alerts::PriceDelta priceDelta1Min{ Alerts::PriceDelta::Under1 };
+
+	Alerts::VolumeStDev volStDev5Min{ Alerts::VolumeStDev::LowVol };
+	Alerts::VolumeThreshold volThresh5Min{ Alerts::VolumeThreshold::LowVol };
+	Alerts::PriceDelta priceDelta5Min{ Alerts::PriceDelta::Under1 };
+
+	Alerts::VolumeStDev updateVolStDev(double volStDev);
+	Alerts::VolumeThreshold updateVolThreshold(long volume);
+	Alerts::PriceDelta updatePriceDelta(double priceStDev);
+};
+
+//==============================================================================
+// Contract Data will perform a variety of functions for each contract under the 
+// current scope of strikes. These will inlcude:
+//	*Receiving 5 second interval data from the wrapper and organizing into 
+//		5 sec, 30 sec, 1 min and 5 min candles
+//	*Updating the standard deviation of difference in high and low of price
+//		and of the volume for each candle
+//	*All data will be stored for historical analysis
+//==============================================================================
 
 class ContractData {
 public:
@@ -70,9 +93,10 @@ public:
 	vector<std::pair<long, long long>> volOverTime() const;
 	vector<bool> highLowComparisons() const;
 
-
 	StandardDeviation priceStDev(TimeFrame tf);
 	StandardDeviation volStDev(TimeFrame tf);
+
+	VolAndPriceTags getVolAndPriceTags();
 
 private:
 	const TickerId contractId_;
@@ -113,11 +137,10 @@ private:
 	// Tags that will be tracked and added to new candles
 	Alerts::OptionType optType_{ Alerts::OptionType::Call };
 	Alerts::TimeOfDay tod_{ Alerts::TimeOfDay::Hour1 };
-	Alerts::VolumeStDev volStDev_{ Alerts::VolumeStDev::LowVol };
-	Alerts::VolumeThreshold volThresh_{ Alerts::VolumeThreshold::LowVol };
-	Alerts::PriceDelta priceDelta_{ Alerts::PriceDelta::Under1 };
 	Alerts::DailyHighsAndLows DHL_{ Alerts::DailyHighsAndLows::Inside };
 	Alerts::LocalHighsAndLows LHL_{ Alerts::LocalHighsAndLows::Inside };
+
+	VolAndPriceTags VPT_;
 
 	// Update various trackers
 	// Update respective containers with new candles and stdev values
@@ -128,7 +151,6 @@ private:
 
 	// Update Tag Values
 	void updateTimeOfDay(long unixTime); 
-	void updateDeviationTags(double priceStDev, double volStDev, long volume);
 
 	// For data keeping purposes
 	vector<std::pair<long, long long>> cumulativeVolume_{ 0 };

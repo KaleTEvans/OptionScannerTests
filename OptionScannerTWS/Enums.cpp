@@ -447,70 +447,129 @@ namespace Alerts {
 		throw std::invalid_argument("Unknown string for Local Highs and Lows");
 	}
 
+	std::string EnumString::tag_category(TagCategory val) {
+		std::string res;
+		switch (val) 
+		{
+		case Alerts::TagCategory::OptionType:
+			res = "OptionType";
+			break;
+		case Alerts::TagCategory::TimeFrame:
+			res = "TimeFrame";
+			break;
+		case Alerts::TagCategory::RelativeToMoney:
+			res = "RelativeToMoney";
+			break;
+		case Alerts::TagCategory::VolumeStDev:
+			res = "VolumeStDev";
+			break;
+		case Alerts::TagCategory::VolumeThreshold:
+			res = "VolumeThreshold";
+			break;
+		case Alerts::TagCategory::UnderlyingPriceDelta:
+			res = "UnderlyingPriceDelta";
+			break;
+		case Alerts::TagCategory::OptionPriceDelta:
+			res = "OptionPriceDelta";
+			break;
+		case Alerts::TagCategory::UnderlyingDailyHighsAndLows:
+			res = "UnderlyingDailyHighsAndLows";
+			break;
+		case Alerts::TagCategory::OptionDailyHighsAndLows:
+			res = "OptionDailyHighsAndLows";
+			break;
+		case Alerts::TagCategory::UnderlyingLocalHighsAndLows:
+			res = "UnderlyingLocalHighsAndLows";
+			break;
+		case Alerts::TagCategory::OptionLocalHighsAndLows:
+			res = "OptionLocalHighsAndLows";
+			break;
+		default:
+			break;
+		}
+		return res;
+	}
+
+	TagCategory EnumString::str_to_tag_category(const std::string& str) {
+		if (str == "OptionType") return TagCategory::OptionType;
+		if (str == "TimeFrame") return TagCategory::TimeFrame;
+		if (str == "RelativeToMoney") return TagCategory::RelativeToMoney;
+		if (str == "VolumeStDev") return TagCategory::VolumeStDev;
+		if (str == "VolumeThreshold") return TagCategory::VolumeThreshold;
+		if (str == "UnderlyingPriceDelta") return TagCategory::UnderlyingPriceDelta;
+		if (str == "OptionPriceDelta") return TagCategory::OptionPriceDelta;
+		if (str == "UnderlyingDailyHighsAndLows") return TagCategory::UnderlyingDailyHighsAndLows;
+		if (str == "OptionDailyHighsAndLows") return TagCategory::OptionDailyHighsAndLows;
+		if (str == "UnderlyingLocalHighsAndLows") return TagCategory::UnderlyingLocalHighsAndLows;
+		if (str == "OptionLocalHighsAndLows") return TagCategory::OptionLocalHighsAndLows;
+
+		throw std::invalid_argument("Unknown string for Tag Category");
+	}
+
 	std::unordered_map<std::pair<string, string>, int, PairHash> TagDBInterface::tagToInt = {
-		{ {Alerts::EnumString::option_type(Alerts::OptionType::Call), "OptionType"}, 1 },
-		{ {Alerts::EnumString::option_type(Alerts::OptionType::Put), "OptionType"}, 2 },
+		{ {Alerts::EnumString::option_type(Alerts::OptionType::Call), EnumString::tag_category(TagCategory::OptionType)}, 1 },
+		{ {Alerts::EnumString::option_type(Alerts::OptionType::Put), EnumString::tag_category(TagCategory::OptionType)}, 2 },
 
-		{ {time_frame(TimeFrame::FiveSecs), "TimeFrame"}, 3 },
-		{ {time_frame(TimeFrame::ThirtySecs), "TimeFrame"}, 4 },
-		{ {time_frame(TimeFrame::OneMin), "TimeFrame"}, 5 },
-		{ {time_frame(TimeFrame::FiveMin), "TimeFrame"}, 6 },
+		{ {time_frame(TimeFrame::FiveSecs), EnumString::tag_category(TagCategory::TimeFrame)}, 3 },
+		{ {time_frame(TimeFrame::ThirtySecs), EnumString::tag_category(TagCategory::TimeFrame)}, 4 },
+		{ {time_frame(TimeFrame::OneMin), EnumString::tag_category(TagCategory::TimeFrame)}, 5 },
+		{ {time_frame(TimeFrame::FiveMin), EnumString::tag_category(TagCategory::TimeFrame)}, 6 },
 
-		{ {Alerts::EnumString::relative_to_money(Alerts::RelativeToMoney::ATM), "RelativeToMoney"}, 7 },
-		{ {Alerts::EnumString::relative_to_money(Alerts::RelativeToMoney::ITM1), "RelativeToMoney"}, 8 },
-		{ {Alerts::EnumString::relative_to_money(Alerts::RelativeToMoney::ITM2), "RelativeToMoney"}, 9 },
-		{ {Alerts::EnumString::relative_to_money(Alerts::RelativeToMoney::ITM3), "RelativeToMoney"}, 10 },
-		{ {Alerts::EnumString::relative_to_money(Alerts::RelativeToMoney::ITM4), "RelativeToMoney"}, 11 },
-		{ {Alerts::EnumString::relative_to_money(Alerts::RelativeToMoney::DeepITM), "RelativeToMoney"}, 12 },
-		{ {Alerts::EnumString::relative_to_money(Alerts::RelativeToMoney::OTM1), "RelativeToMoney"}, 13 },
-		{ {Alerts::EnumString::relative_to_money(Alerts::RelativeToMoney::OTM2), "RelativeToMoney"}, 14 },
-		{ {Alerts::EnumString::relative_to_money(Alerts::RelativeToMoney::OTM3), "RelativeToMoney"}, 15 },
-		{ {Alerts::EnumString::relative_to_money(Alerts::RelativeToMoney::OTM4), "RelativeToMoney"}, 16 },
-		{ {Alerts::EnumString::relative_to_money(Alerts::RelativeToMoney::DeepOTM), "RelativeToMoney"}, 17 },
+		{ {Alerts::EnumString::relative_to_money(Alerts::RelativeToMoney::ATM), EnumString::tag_category(TagCategory::RelativeToMoney)}, 7 },
+		{ {Alerts::EnumString::relative_to_money(Alerts::RelativeToMoney::ITM1), EnumString::tag_category(TagCategory::RelativeToMoney)}, 8 },
+		{ {Alerts::EnumString::relative_to_money(Alerts::RelativeToMoney::ITM2), EnumString::tag_category(TagCategory::RelativeToMoney)}, 9 },
+		{ {Alerts::EnumString::relative_to_money(Alerts::RelativeToMoney::ITM3), EnumString::tag_category(TagCategory::RelativeToMoney)}, 10 },
+		{ {Alerts::EnumString::relative_to_money(Alerts::RelativeToMoney::ITM4), EnumString::tag_category(TagCategory::RelativeToMoney)}, 11 },
+		{ {Alerts::EnumString::relative_to_money(Alerts::RelativeToMoney::DeepITM), EnumString::tag_category(TagCategory::RelativeToMoney)}, 12 },
+		{ {Alerts::EnumString::relative_to_money(Alerts::RelativeToMoney::OTM1), EnumString::tag_category(TagCategory::RelativeToMoney)}, 13 },
+		{ {Alerts::EnumString::relative_to_money(Alerts::RelativeToMoney::OTM2), EnumString::tag_category(TagCategory::RelativeToMoney)}, 14 },
+		{ {Alerts::EnumString::relative_to_money(Alerts::RelativeToMoney::OTM3), EnumString::tag_category(TagCategory::RelativeToMoney)}, 15 },
+		{ {Alerts::EnumString::relative_to_money(Alerts::RelativeToMoney::OTM4), EnumString::tag_category(TagCategory::RelativeToMoney)}, 16 },
+		{ {Alerts::EnumString::relative_to_money(Alerts::RelativeToMoney::DeepOTM), EnumString::tag_category(TagCategory::RelativeToMoney)}, 17 },
 
-		{ {Alerts::EnumString::time_of_day(Alerts::TimeOfDay::Hour1), "TimeOfDay"}, 18 },
-		{ {Alerts::EnumString::time_of_day(Alerts::TimeOfDay::Hour2), "TimeOfDay"}, 19 },
-		{ {Alerts::EnumString::time_of_day(Alerts::TimeOfDay::Hour3), "TimeOfDay"}, 20 },
-		{ {Alerts::EnumString::time_of_day(Alerts::TimeOfDay::Hour4), "TimeOfDay"}, 21 },
-		{ {Alerts::EnumString::time_of_day(Alerts::TimeOfDay::Hour5), "TimeOfDay"}, 22 },
-		{ {Alerts::EnumString::time_of_day(Alerts::TimeOfDay::Hour6), "TimeOfDay"}, 23 },
-		{ {Alerts::EnumString::time_of_day(Alerts::TimeOfDay::Hour7), "TimeOfDay"}, 24 },
+		{ {Alerts::EnumString::time_of_day(Alerts::TimeOfDay::Hour1), EnumString::tag_category(TagCategory::TimeOfDay)}, 18 },
+		{ {Alerts::EnumString::time_of_day(Alerts::TimeOfDay::Hour2), EnumString::tag_category(TagCategory::TimeOfDay)}, 19 },
+		{ {Alerts::EnumString::time_of_day(Alerts::TimeOfDay::Hour3), EnumString::tag_category(TagCategory::TimeOfDay)}, 20 },
+		{ {Alerts::EnumString::time_of_day(Alerts::TimeOfDay::Hour4), EnumString::tag_category(TagCategory::TimeOfDay)}, 21 },
+		{ {Alerts::EnumString::time_of_day(Alerts::TimeOfDay::Hour5), EnumString::tag_category(TagCategory::TimeOfDay)}, 22 },
+		{ {Alerts::EnumString::time_of_day(Alerts::TimeOfDay::Hour6), EnumString::tag_category(TagCategory::TimeOfDay)}, 23 },
+		{ {Alerts::EnumString::time_of_day(Alerts::TimeOfDay::Hour7), EnumString::tag_category(TagCategory::TimeOfDay)}, 24 },
 
-		{ {Alerts::EnumString::vol_st_dev(Alerts::VolumeStDev::Over1), "VolumeStDev"}, 25 },
-		{ {Alerts::EnumString::vol_st_dev(Alerts::VolumeStDev::Over2), "VolumeStDev"}, 26 },
-		{ {Alerts::EnumString::vol_st_dev(Alerts::VolumeStDev::Over3), "VolumeStDev"}, 27 },
-		{ {Alerts::EnumString::vol_st_dev(Alerts::VolumeStDev::Over4), "VolumeStDev"}, 28 },
-		{ {Alerts::EnumString::vol_st_dev(Alerts::VolumeStDev::LowVol), "VolumeStDev"}, 29 },
+		{ {Alerts::EnumString::vol_st_dev(Alerts::VolumeStDev::Over1), EnumString::tag_category(TagCategory::VolumeStDev)}, 25 },
+		{ {Alerts::EnumString::vol_st_dev(Alerts::VolumeStDev::Over2), EnumString::tag_category(TagCategory::VolumeStDev)}, 26 },
+		{ {Alerts::EnumString::vol_st_dev(Alerts::VolumeStDev::Over3), EnumString::tag_category(TagCategory::VolumeStDev)}, 27 },
+		{ {Alerts::EnumString::vol_st_dev(Alerts::VolumeStDev::Over4), EnumString::tag_category(TagCategory::VolumeStDev)}, 28 },
+		{ {Alerts::EnumString::vol_st_dev(Alerts::VolumeStDev::LowVol), EnumString::tag_category(TagCategory::VolumeStDev)}, 29 },
 
-		{ {Alerts::EnumString::vol_threshold(Alerts::VolumeThreshold::Vol100), "VolumeThreshold"}, 30 },
-		{ {Alerts::EnumString::vol_threshold(Alerts::VolumeThreshold::Vol250), "VolumeThreshold"}, 31 },
-		{ {Alerts::EnumString::vol_threshold(Alerts::VolumeThreshold::Vol500), "VolumeThreshold"}, 32 },
-		{ {Alerts::EnumString::vol_threshold(Alerts::VolumeThreshold::Vol1000), "VolumeThreshold"}, 33 },
-		{ {Alerts::EnumString::vol_threshold(Alerts::VolumeThreshold::LowVol), "VolumeThreshold"}, 34 },
+		{ {Alerts::EnumString::vol_threshold(Alerts::VolumeThreshold::Vol100), EnumString::tag_category(TagCategory::VolumeThreshold)}, 30 },
+		{ {Alerts::EnumString::vol_threshold(Alerts::VolumeThreshold::Vol250), EnumString::tag_category(TagCategory::VolumeThreshold)}, 31 },
+		{ {Alerts::EnumString::vol_threshold(Alerts::VolumeThreshold::Vol500), EnumString::tag_category(TagCategory::VolumeThreshold)}, 32 },
+		{ {Alerts::EnumString::vol_threshold(Alerts::VolumeThreshold::Vol1000), EnumString::tag_category(TagCategory::VolumeThreshold)}, 33 },
+		{ {Alerts::EnumString::vol_threshold(Alerts::VolumeThreshold::LowVol), EnumString::tag_category(TagCategory::VolumeThreshold)}, 34 },
 
-		{ {Alerts::EnumString::price_delta(Alerts::PriceDelta::Under1), "UnderlyingPriceDelta"}, 35 },
-		{ {Alerts::EnumString::price_delta(Alerts::PriceDelta::Under2), "UnderlyingPriceDelta"}, 36 },
-		{ {Alerts::EnumString::price_delta(Alerts::PriceDelta::Over2), "UnderlyingPriceDelta"}, 37 },
+		{ {Alerts::EnumString::price_delta(Alerts::PriceDelta::Under1), EnumString::tag_category(TagCategory::UnderlyingPriceDelta)}, 35 },
+		{ {Alerts::EnumString::price_delta(Alerts::PriceDelta::Under2),EnumString::tag_category(TagCategory::UnderlyingPriceDelta)}, 36 },
+		{ {Alerts::EnumString::price_delta(Alerts::PriceDelta::Over2), EnumString::tag_category(TagCategory::UnderlyingPriceDelta)}, 37 },
 
-		{ {Alerts::EnumString::price_delta(Alerts::PriceDelta::Under1), "OptionPriceDelta"}, 38 },
-		{ {Alerts::EnumString::price_delta(Alerts::PriceDelta::Under2), "OptionPriceDelta"}, 39 },
-		{ {Alerts::EnumString::price_delta(Alerts::PriceDelta::Over2), "OptionPriceDelta"}, 40 },
+		{ {Alerts::EnumString::price_delta(Alerts::PriceDelta::Under1), EnumString::tag_category(TagCategory::OptionPriceDelta)}, 38 },
+		{ {Alerts::EnumString::price_delta(Alerts::PriceDelta::Under2), EnumString::tag_category(TagCategory::OptionPriceDelta)}, 39 },
+		{ {Alerts::EnumString::price_delta(Alerts::PriceDelta::Over2), EnumString::tag_category(TagCategory::OptionPriceDelta)}, 40 },
 
-		{ {Alerts::EnumString::daily_highs_and_lows(Alerts::DailyHighsAndLows::NDL), "UnderlyingDailyHighsAndLows"}, 41 },
-		{ {Alerts::EnumString::daily_highs_and_lows(Alerts::DailyHighsAndLows::NDH), "UnderlyingDailyHighsAndLows"}, 42 },
-		{ {Alerts::EnumString::daily_highs_and_lows(Alerts::DailyHighsAndLows::Inside), "UnderlyingDailyHighsAndLows"}, 43 },
+		{ {Alerts::EnumString::daily_highs_and_lows(Alerts::DailyHighsAndLows::NDL), EnumString::tag_category(TagCategory::UnderlyingDailyHighsAndLows)}, 41 },
+		{ {Alerts::EnumString::daily_highs_and_lows(Alerts::DailyHighsAndLows::NDH), EnumString::tag_category(TagCategory::UnderlyingDailyHighsAndLows)}, 42 },
+		{ {Alerts::EnumString::daily_highs_and_lows(Alerts::DailyHighsAndLows::Inside), EnumString::tag_category(TagCategory::UnderlyingDailyHighsAndLows)}, 43 },
 
-		{ {Alerts::EnumString::daily_highs_and_lows(Alerts::DailyHighsAndLows::NDL), "OptionDailyHighsAndLows"}, 44 },
-		{ {Alerts::EnumString::daily_highs_and_lows(Alerts::DailyHighsAndLows::NDH), "OptionDailyHighsAndLows"}, 45 },
-		{ {Alerts::EnumString::daily_highs_and_lows(Alerts::DailyHighsAndLows::Inside), "OptionDailyHighsAndLows"}, 46 },
+		{ {Alerts::EnumString::daily_highs_and_lows(Alerts::DailyHighsAndLows::NDL), EnumString::tag_category(TagCategory::OptionDailyHighsAndLows)}, 44 },
+		{ {Alerts::EnumString::daily_highs_and_lows(Alerts::DailyHighsAndLows::NDH), EnumString::tag_category(TagCategory::OptionDailyHighsAndLows)}, 45 },
+		{ {Alerts::EnumString::daily_highs_and_lows(Alerts::DailyHighsAndLows::Inside), EnumString::tag_category(TagCategory::OptionDailyHighsAndLows)}, 46 },
 
-		{ {Alerts::EnumString::local_highs_and_lows(Alerts::LocalHighsAndLows::NLL), "UnderlyingLocalHighsAndLows"}, 47 },
-		{ {Alerts::EnumString::local_highs_and_lows(Alerts::LocalHighsAndLows::NLH), "UnderlyingLocalHighsAndLows"}, 48 },
-		{ {Alerts::EnumString::local_highs_and_lows(Alerts::LocalHighsAndLows::Inside), "UnderlyingLocalHighsAndLows"}, 49 },
+		{ {Alerts::EnumString::local_highs_and_lows(Alerts::LocalHighsAndLows::NLL), EnumString::tag_category(TagCategory::UnderlyingLocalHighsAndLows)}, 47 },
+		{ {Alerts::EnumString::local_highs_and_lows(Alerts::LocalHighsAndLows::NLH), EnumString::tag_category(TagCategory::UnderlyingLocalHighsAndLows)}, 48 },
+		{ {Alerts::EnumString::local_highs_and_lows(Alerts::LocalHighsAndLows::Inside), EnumString::tag_category(TagCategory::UnderlyingLocalHighsAndLows)}, 49 },
 
-		{ {Alerts::EnumString::local_highs_and_lows(Alerts::LocalHighsAndLows::NLL), "OptionLocalHighsAndLows"}, 50 },
-		{ {Alerts::EnumString::local_highs_and_lows(Alerts::LocalHighsAndLows::NLH), "OptionLocalHighsAndLows"}, 51 },
-		{ {Alerts::EnumString::local_highs_and_lows(Alerts::LocalHighsAndLows::Inside), "OptionLocalHighsAndLows"}, 52 }
+		{ {Alerts::EnumString::local_highs_and_lows(Alerts::LocalHighsAndLows::NLL), EnumString::tag_category(TagCategory::OptionLocalHighsAndLows)}, 50 },
+		{ {Alerts::EnumString::local_highs_and_lows(Alerts::LocalHighsAndLows::NLH), EnumString::tag_category(TagCategory::OptionLocalHighsAndLows)}, 51 },
+		{ {Alerts::EnumString::local_highs_and_lows(Alerts::LocalHighsAndLows::Inside), EnumString::tag_category(TagCategory::OptionLocalHighsAndLows)}, 52 }
 	};
 
 	std::unordered_map<int, std::pair<std::string, std::string>> TagDBInterface::intToTag;

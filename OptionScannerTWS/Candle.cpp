@@ -29,6 +29,10 @@ Candle::Candle(TickerId reqId, long time, double open, double high,
 Candle::Candle() : reqId_(0), date_(""), time_(0), open_(0), close_(0), high_(0),
     low_(0), volume_(0), barCount_(0), WAP_(0.0), hasGaps_(0), count_(0) {}
 
+Candle::Candle(const Candle& c) : reqId_(c.reqId_), date_(c.date_), dateConverted_(c.dateConverted_), 
+    time_(c.time_), open_(c.open_), close_(c.close_), high_(c.high_), low_(c.low_), volume_(c.volume_), 
+    barCount_(c.barCount_), WAP_(c.WAP_), hasGaps_(c.hasGaps_), count_(c.count_) {}
+
 // Getters
 TickerId Candle::reqId() const { return reqId_; }
 long Candle::time() const { return time_; }
@@ -75,10 +79,10 @@ void Candle::convertUnixToDate() const {
 CandleTags::CandleTags(std::shared_ptr<Candle> c, TimeFrame tf, Alerts::OptionType optType, Alerts::TimeOfDay tod,
     Alerts::VolumeStDev volStDev, Alerts::VolumeThreshold volThresh, Alerts::PriceDelta optPriceDelta,
     Alerts::DailyHighsAndLows optDHL, Alerts::LocalHighsAndLows optLHL) :
-    c(c), tf_(tf), optType_(optType), tod_(tod), optPriceDelta_(optPriceDelta),
+    candle(*c), tf_(tf), optType_(optType), tod_(tod), optPriceDelta_(optPriceDelta),
     volStDev_(volStDev), volThresh_(volThresh), optDHL_(optDHL), optLHL_(optLHL) {}
 
-CandleTags::CandleTags(std::shared_ptr<Candle> c, std::vector<int> tags) : c(c), tags_(tags)
+CandleTags::CandleTags(std::shared_ptr<Candle> c, std::vector<int> tags) : candle(*c), tags_(tags)
 {
     std::string tf = Alerts::TagDBInterface::intToTag[tags[0]].first;
     std::string opttype = Alerts::TagDBInterface::intToTag[tags[1]].first;

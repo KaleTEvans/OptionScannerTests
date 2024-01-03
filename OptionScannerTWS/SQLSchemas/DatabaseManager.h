@@ -8,6 +8,7 @@
 
 #include <memory>
 #include <queue>
+#include <map>
 
 namespace OptionDB {
 
@@ -18,7 +19,8 @@ namespace OptionDB {
 		void start();
 		void stop();
 
-		void addToInsertionQueue(std::shared_ptr<Candle> candle, TimeFrame tf);
+		void addToInsertionQueue(std::shared_ptr<CandleTags> ct);
+		void addToInsertionQueue(std::shared_ptr<Candle> c, TimeFrame tf);
 
 		void setCandleTables();
 		void setAlertTables();
@@ -29,9 +31,12 @@ namespace OptionDB {
 		std::shared_ptr<nanodbc::connection> conn_;
 
 		std::thread dbInsertionThread;
-		std::queue<std::pair<std::shared_ptr<Candle>, TimeFrame>> candleQueue;
 		std::mutex queueMtx;
 		std::condition_variable cv;
 		bool stopInsertion{ false };
+
+		// Processing containers
+		std::queue<std::pair<UnderlyingTable::CandleForDB, TimeFrame>> underlyingQueue;
+		std::queue<std::shared_ptr<CandleTags>> candleProcessingQueue;
 	};
 }
