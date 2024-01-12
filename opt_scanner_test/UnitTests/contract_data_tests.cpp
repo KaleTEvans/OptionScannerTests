@@ -64,74 +64,74 @@ TEST(ContractDataTests, updateDataTest) {
 	EXPECT_EQ(cd.candlesLast30Minutes().size(), 360);
 }
 
-TEST(ContractDataTests, AlertSystemTest) {
-	// Will manually add candles to generate isolated alerts
-	MockWrapper mWrapper;
-	MockClient mClient(mWrapper);
-
-	std::vector<std::unique_ptr<Candle>> candles;
-
-	for (size_t i = 0; i < 720; i++) {
-		if (i == 300) {
-			candles.push_back(std::move(std::make_unique<Candle>(11, i, 3, 4, 1, 3, 1000000)));
-		}
-		else {
-			candles.push_back(std::move(std::make_unique<Candle>(11, i, 3, 4, 1, 3, 1000)));
-		}
-	}
-
-	TickerId reqId = candles[0]->reqId();
-	ContractData cd(reqId, std::move(candles[0]));
-
-	TimeFrame testTF;
-	double testStDev = 0;
-	double volume = 0;
-	int alertCount = 0;
-	std::tuple<TimeFrame, double, double> test1;
-	std::tuple<TimeFrame, double, double> test2;
-	std::tuple<TimeFrame, double, double> test3;
-	std::tuple<TimeFrame, double, double> test4;
-	std::vector<std::tuple<TimeFrame, double, double>> vTests;
-
-	// Register the alert
-	cd.registerAlert([&]
-	(TimeFrame tf, std::shared_ptr<Candle> candle) {
-			volume = static_cast<double>(candle->volume());
-			testStDev = cd.volStDev(tf).numStDev(volume);
-			testTF = tf;
-			vTests.push_back(std::make_tuple(tf, volume, testStDev));
-			alertCount++;
-		});
-
-	for (size_t i = 1; i < candles.size(); i++) {
-		cd.updateData(std::move(candles[i]));
-	}
-
-	EXPECT_TRUE(std::get<0>(vTests[0]) == TimeFrame::FiveSecs && std::get<1>(vTests[0]) == 1000000 && std::get<2>(vTests[0]) > 2);
-	EXPECT_TRUE(std::get<0>(vTests[1]) == TimeFrame::ThirtySecs && std::get<1>(vTests[1]) >= 1000000 && std::get<2>(vTests[1]) > 2);
-	EXPECT_TRUE(std::get<0>(vTests[2]) == TimeFrame::OneMin && std::get<1>(vTests[2]) >= 1000000 && std::get<2>(vTests[2]) > 2);
-	EXPECT_TRUE(std::get<0>(vTests[3]) == TimeFrame::FiveMin && std::get<1>(vTests[3]) >= 1000000 && std::get<2>(vTests[3]) > 2);
-	EXPECT_EQ(alertCount, 4); // Four for each timeframe
-}
-
-// Test will check to ensure option strike relative to money, volume standard deviation, high and low comparisons, option type, and
-// time of day numbers will all be included with candle updates
-TEST(ContractDataTests, AdditionalDBItems) {
-	MockWrapper mWrapper;
-	MockClient mClient(mWrapper);
-
-	std::vector<std::unique_ptr<Candle>> candles;
-	double spxRefPrice = 4074.5;
-
-	for (size_t i = 0; i < 720; i++) {
-		if (i == 300) {
-			candles.push_back(std::move(std::make_unique<Candle>(11, i, 3, 4, 1, 3, 1000000)));
-		}
-		else {
-			candles.push_back(std::move(std::make_unique<Candle>(11, i, 3, 4, 1, 3, 1000)));
-		}
-	}
-
-	TickerId reqId = candles[0]->reqId();
-	ContractData cd(reqId, std::move(candles[0]));
-}
+//TEST(ContractDataTests, AlertSystemTest) {
+//	// Will manually add candles to generate isolated alerts
+//	MockWrapper mWrapper;
+//	MockClient mClient(mWrapper);
+//
+//	std::vector<std::unique_ptr<Candle>> candles;
+//
+//	for (size_t i = 0; i < 720; i++) {
+//		if (i == 300) {
+//			candles.push_back(std::move(std::make_unique<Candle>(11, i, 3, 4, 1, 3, 1000000)));
+//		}
+//		else {
+//			candles.push_back(std::move(std::make_unique<Candle>(11, i, 3, 4, 1, 3, 1000)));
+//		}
+//	}
+//
+//	TickerId reqId = candles[0]->reqId();
+//	ContractData cd(reqId, std::move(candles[0]));
+//
+//	TimeFrame testTF;
+//	double testStDev = 0;
+//	double volume = 0;
+//	int alertCount = 0;
+//	std::tuple<TimeFrame, double, double> test1;
+//	std::tuple<TimeFrame, double, double> test2;
+//	std::tuple<TimeFrame, double, double> test3;
+//	std::tuple<TimeFrame, double, double> test4;
+//	std::vector<std::tuple<TimeFrame, double, double>> vTests;
+//
+//	// Register the alert
+//	cd.registerAlert([&]
+//	(TimeFrame tf, std::shared_ptr<Candle> candle) {
+//			volume = static_cast<double>(candle->volume());
+//			testStDev = cd.volStDev(tf).numStDev(volume);
+//			testTF = tf;
+//			vTests.push_back(std::make_tuple(tf, volume, testStDev));
+//			alertCount++;
+//		});
+//
+//	for (size_t i = 1; i < candles.size(); i++) {
+//		cd.updateData(std::move(candles[i]));
+//	}
+//
+//	EXPECT_TRUE(std::get<0>(vTests[0]) == TimeFrame::FiveSecs && std::get<1>(vTests[0]) == 1000000 && std::get<2>(vTests[0]) > 2);
+//	EXPECT_TRUE(std::get<0>(vTests[1]) == TimeFrame::ThirtySecs && std::get<1>(vTests[1]) >= 1000000 && std::get<2>(vTests[1]) > 2);
+//	EXPECT_TRUE(std::get<0>(vTests[2]) == TimeFrame::OneMin && std::get<1>(vTests[2]) >= 1000000 && std::get<2>(vTests[2]) > 2);
+//	EXPECT_TRUE(std::get<0>(vTests[3]) == TimeFrame::FiveMin && std::get<1>(vTests[3]) >= 1000000 && std::get<2>(vTests[3]) > 2);
+//	EXPECT_EQ(alertCount, 4); // Four for each timeframe
+//}
+//
+//// Test will check to ensure option strike relative to money, volume standard deviation, high and low comparisons, option type, and
+//// time of day numbers will all be included with candle updates
+//TEST(ContractDataTests, AdditionalDBItems) {
+//	MockWrapper mWrapper;
+//	MockClient mClient(mWrapper);
+//
+//	std::vector<std::unique_ptr<Candle>> candles;
+//	double spxRefPrice = 4074.5;
+//
+//	for (size_t i = 0; i < 720; i++) {
+//		if (i == 300) {
+//			candles.push_back(std::move(std::make_unique<Candle>(11, i, 3, 4, 1, 3, 1000000)));
+//		}
+//		else {
+//			candles.push_back(std::move(std::make_unique<Candle>(11, i, 3, 4, 1, 3, 1000)));
+//		}
+//	}
+//
+//	TickerId reqId = candles[0]->reqId();
+//	ContractData cd(reqId, std::move(candles[0]));
+//}

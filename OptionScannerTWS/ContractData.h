@@ -103,6 +103,9 @@ private:
 	std::shared_ptr<OptionDB::DatabaseManager> dbm_{ nullptr };
 	bool dbConnect{ false };
 
+	// ****** Update this if wishing to change the percent difference between min max values and price
+	double percentDiff = 0.1;
+
 	vector<std::shared_ptr<Candle>> fiveSecCandles_;
 	vector<std::shared_ptr<Candle>> thirtySecCandles_;
 	vector<std::shared_ptr<Candle>> oneMinCandles_;
@@ -163,7 +166,7 @@ private:
 // Callback Functionality for Alerts
 //=========================================
 public:
-	using AlertFunction = std::function<void(TimeFrame tf, std::shared_ptr<Candle> candle)>;
+	using AlertFunction = std::function<void(std::shared_ptr<CandleTags> candle)>;
 	void registerAlert(AlertFunction alert) { alert_ = std::move(alert); }
 
 private:

@@ -22,6 +22,10 @@ MockOptionScanner::MockOptionScanner(int delay) : delay_(delay), EC(YW) {
 	// Add SPX to the added contracts set
 	addedContracts.push_back(1234);
 
+	// Start the dbm
+	dbm = std::make_shared<OptionDB::DatabaseManager>(true);
+	dbm->start();
+
 	//SPX_.initializeOptionRequests(EC, 111);
 
 	// Initialzie the contract chain
@@ -75,6 +79,9 @@ void MockOptionScanner::streamOptionData() {
 			}
 			else {
 				std::shared_ptr<ContractData> cd = std::make_shared<ContractData>(req, std::move(candle));
+
+				if (req == 1234) cd->setupDatabaseManager(dbm);
+
 				registerAlertCallback(cd);
 				contractChain_->insert({ req, cd });
 			}
@@ -97,6 +104,9 @@ void MockOptionScanner::streamOptionData() {
 	if (!YW.notDone()) {
 		std::cout << "Wrapper notified done. Terminating." << std::endl;
 		EC.cancelRealTimeBars();
+
+		//std::this_thread::sleep_for(std::chrono::milliseconds(100));
+		dbm->stop();
 	}
 }
 
@@ -105,16 +115,12 @@ void MockOptionScanner::streamOptionData() {
 //==============================================================
 
 void MockOptionScanner::registerAlertCallback(std::shared_ptr<ContractData> cd) {
-	cd->registerAlert([this, cd](TimeFrame tf, std::shared_ptr<Candle> candle) {
+	cd->registerAlert([this, cd](std::shared_ptr<CandleTags> ct) {
+		std::lock_guard<std::mutex> lock(optScanMtx);
+		// Send to dbm
+		//std::cout << "Sending to DBM" << std::endl;
+		dbm->addToInsertionQueue(ct);
 		
-		// For the purpose of the mock testing, we will just add these instances to a queue
-		Alert a;
-		a.tf = tf;
-		a.cd = cd;
-		a.SPX = contractChain_->at(1234);
-		a.candle = candle;
-
-		alertQueue.push(a);
 	});
 }
 
@@ -185,6 +191,14 @@ void MockOptionScanner::updateStrikes(double price) {
 	if (static_cast<int>(addedContracts.size()) > YW.getBufferCapacity()) YW.setBufferCapacity(static_cast<int>(addedContracts.size()));
 	//OPTIONSCANNER_DEBUG("Buffer capacity updated. Now at {}", YW.candleBuffer.checkBufferCapacity());
 	strikesUpdated = true;
+}
+
+// Wait on dbm to finish inserting to db
+void MockOptionScanner::waitForDBM() {
+	std::unique_lock<std::mutex> lock(dbm->getMtx());
+	dbm->getCV().wait(lock, [&]() {
+		return dbm->processingComplete();
+	});
 }
 
 //=====================================================

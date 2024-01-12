@@ -14,16 +14,23 @@ namespace OptionDB {
 
 	class DatabaseManager {
 	public:
-		DatabaseManager();
+		DatabaseManager(bool testConfigNoDB);
 
 		void start();
 		void stop();
+		bool processingComplete() const;
 
 		void addToInsertionQueue(std::shared_ptr<CandleTags> ct);
 		void addToInsertionQueue(std::shared_ptr<Candle> c, TimeFrame tf);
 
 		void setCandleTables();
 		void setAlertTables();
+
+		// Just output data, don't send to db
+		bool testConfigNoDB = true;
+
+		std::mutex& getMtx();
+		std::condition_variable& getCV();
 
 	private:
 		void candleInsertionLoop();
@@ -34,6 +41,7 @@ namespace OptionDB {
 		std::mutex queueMtx;
 		std::condition_variable cv;
 		bool stopInsertion{ false };
+		bool processingComplete_{ false };
 
 		// Processing containers
 		std::queue<std::pair<UnderlyingTable::CandleForDB, TimeFrame>> underlyingQueue;

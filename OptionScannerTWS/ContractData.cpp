@@ -80,8 +80,8 @@ void ContractData::updateData(std::unique_ptr<Candle> c) {
 		VPT_.volStDev5Sec, VPT_.volThresh5Sec, VPT_.priceDelta5Sec, DHL_, LHL_);
 
 	///////////////////////// 5 Second Alert Options ///////////////////////////////
-	if (sdVol5Sec_.checkDeviation(fiveSec->volume(), 2) && sdVol5Sec_.sum() > 9 && !isUnderlying_) {
-		if (alert_) alert_(TimeFrame::FiveSecs, fiveSec);
+	if (!isUnderlying_) {
+		if (alert_) alert_(fiveSecTags);
 	}
 
 	//=============================================================
@@ -99,8 +99,11 @@ void ContractData::updateData(std::unique_ptr<Candle> c) {
 		//	contractId_, thirtySecCandles_.back()->open(), thirtySecCandles_.back()->close(), thirtySecCandles_.back()->volume());
 
 		///////////////////////// 30 Second Alert Options ///////////////////////////////
-		if (sdVol30Sec_.checkDeviation(thirtySec->volume(), 1.5) && sdVol30Sec_.sum() > 9 && !isUnderlying_) {
-			if (alert_) alert_(TimeFrame::ThirtySecs, thirtySec);
+		std::shared_ptr<CandleTags> thirtySecTags = std::make_shared<CandleTags>(thirtySec, TimeFrame::ThirtySecs, optType_, tod_,
+			VPT_.volStDev30Sec, VPT_.volThresh30Sec, VPT_.priceDelta30Sec, DHL_, LHL_);
+
+		if (!isUnderlying_) {
+			if (alert_) alert_(thirtySecTags);
 		}
 
 		//=================================================================
@@ -115,9 +118,12 @@ void ContractData::updateData(std::unique_ptr<Candle> c) {
 			// Post to db
 			if (dbConnect && isUnderlying_) dbm_->addToInsertionQueue(oneMin, TimeFrame::OneMin);
 
+			std::shared_ptr<CandleTags> oneMinTags = std::make_shared<CandleTags>(oneMin, TimeFrame::OneMin, optType_, tod_,
+				VPT_.volStDev1Min, VPT_.volThresh1Min, VPT_.priceDelta1Min, DHL_, LHL_);
+
 			///////////////////////// 1 minute Alert Options ///////////////////////////////
-			if (sdVol1Min_.checkDeviation(oneMin->volume(), 1) && sdVol1Min_.sum() > 9 && !isUnderlying_) {
-				if (alert_) alert_(TimeFrame::OneMin, oneMin);
+			if (!isUnderlying_) {
+				if (alert_) alert_(oneMinTags);
 			}
 
 			//====================================================================
@@ -133,9 +139,12 @@ void ContractData::updateData(std::unique_ptr<Candle> c) {
 				// Post to db
 				if (dbConnect && isUnderlying_) dbm_->addToInsertionQueue(fiveMin, TimeFrame::FiveMin);
 
+				std::shared_ptr<CandleTags> fiveMinTags = std::make_shared<CandleTags>(fiveMin, TimeFrame::FiveMin, optType_, tod_,
+					VPT_.volStDev5Min, VPT_.volThresh5Min, VPT_.priceDelta5Min, DHL_, LHL_);
+
 				///////////////////////// 5 Minute Alert Options ///////////////////////////////
-				if (sdVol5Min_.checkDeviation(fiveMin->volume(), 1) && sdVol5Min_.sum() > 4 && !isUnderlying_) {
-					if (alert_) alert_(TimeFrame::FiveMin, fiveMin);
+				if (!isUnderlying_) {
+					if (alert_) alert_(fiveMinTags);
 				}
 			}
 		}
@@ -322,7 +331,6 @@ void ContractData::updateCumulativeVolume(std::shared_ptr<Candle> c) {
 void ContractData::updateComparisons() {
 	// Update underlying information
 	double lastPrice = fiveSecCandles_.back()->close();
-	double percentDiff = 0.1;
 
 	// Check values against the underlying price, will use 0.1% difference
 	if (isWithinXPercent(lastPrice, dailyHigh_, percentDiff)) {
@@ -417,7 +425,7 @@ void ContractData::updateTimeOfDay(long unixTime) {
 	case 6:
 		tod_ = Alerts::TimeOfDay::Hour6;
 		break;
-	case 7:
+	case 8:
 		tod_ = Alerts::TimeOfDay::Hour7;
 		break;
 	default:

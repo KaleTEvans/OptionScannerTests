@@ -6,6 +6,7 @@
 #include "MockClient.h"
 #include "ContractData.h"
 #include "MockSecurityReqHandler.h"
+#include "DatabaseManager.h"
 
 #include <queue>
 
@@ -48,6 +49,9 @@ public:
 
 	std::queue<Alert> alertQueue;
 
+	std::shared_ptr<OptionDB::DatabaseManager> dbm;
+	void waitForDBM();
+
 private:
 	Contract SPX; // Contract to be monitored
 	//Securities::SecurityRequestHandler SPX_;
@@ -72,6 +76,8 @@ private:
 	std::queue<Contract> contractReqQueue; // Holds new contracts to request data
 	std::unordered_set<int> contractsInScope; // If a contract isn't in the main scope of 18, it won't create an alert
 	std::vector<int> addedContracts; // Keep track of all currently requested contracts
+
+	std::mutex optScanMtx;
 
 	// Alerts::AlertHandler alertHandler;
 };

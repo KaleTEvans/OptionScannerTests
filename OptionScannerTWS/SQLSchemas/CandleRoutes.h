@@ -320,7 +320,7 @@ namespace OptionDB {
 					int underlyingDHL = res.get<int>("UnderlyingDailyHighLow");
 					int underlyingLHL = res.get<int>("UnderlyingLocalHighLow");
 
-					vector<int> tags = { timeFrame, optionType, timeOfDay, relativeToMoney, volumeStDev,
+					std::vector<int> tags = { timeFrame, optionType, timeOfDay, relativeToMoney, volumeStDev,
 						volumeThreshold, optPriceDelta, dailyHighLow, localHighLow, underlyingPriceDelta,
 						underlyingDHL, underlyingLHL };
 					std::shared_ptr<Candle> c = std::make_shared<Candle>(reqId, time, open, high, low, close, volume);
