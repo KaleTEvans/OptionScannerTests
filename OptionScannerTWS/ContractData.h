@@ -26,7 +26,7 @@ using std::pair;
 // Helper function for combining candles
 std::shared_ptr<Candle> createNewBars(int id, int increment, const vector<std::shared_ptr<Candle>> data);
 
-// Contains vol and price tags for each timeframe
+// Contains vol and price tags for each timeframe that will be updated with new candles
 struct VolAndPriceTags {
 	Alerts::VolumeStDev volStDev5Sec{ Alerts::VolumeStDev::LowVol };
 	Alerts::VolumeThreshold volThresh5Sec{ Alerts::VolumeThreshold::LowVol };
@@ -72,6 +72,8 @@ public:
 
 	// Accessors
 	TickerId contractId() const;
+	int strikePrice() const;
+	Alerts::OptionType optType() const;
 
 	// Time series accessors
 	vector<std::shared_ptr<Candle>> fiveSecData() const;
@@ -91,15 +93,19 @@ public:
 	long long totalVol() const;
 
 	vector<std::pair<long, long long>> volOverTime() const;
-	vector<bool> highLowComparisons() const;
 
 	StandardDeviation priceStDev(TimeFrame tf);
 	StandardDeviation volStDev(TimeFrame tf);
 
-	VolAndPriceTags getVolAndPriceTags();
+	// Tag Accessors
+	Alerts::PriceDelta priceDelta(TimeFrame tf);
+	Alerts::DailyHighsAndLows dailyHLComparison();
+	Alerts::LocalHighsAndLows localHLComparison();
 
 private:
 	const TickerId contractId_;
+	int strikePrice_{ 0 };
+
 	std::shared_ptr<OptionDB::DatabaseManager> dbm_{ nullptr };
 	bool dbConnect{ false };
 
@@ -130,12 +136,6 @@ private:
 	double localLow_;
 	double tempHigh_;
 	double tempLow_;
-
-	// Data retrieval to compare and add to alerts
-	bool nearDailyHigh;
-	bool nearDailyLow;
-	bool nearLocalHigh;
-	bool nearLocalLow;
 
 	// Tags that will be tracked and added to new candles
 	Alerts::OptionType optType_{ Alerts::OptionType::Call };
@@ -172,3 +172,5 @@ public:
 private:
 	AlertFunction alert_;
 };
+
+Alerts::RelativeToMoney distFromPrice(Alerts::OptionType optType, int strike, double spxPrice);

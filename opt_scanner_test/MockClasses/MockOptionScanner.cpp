@@ -117,6 +117,15 @@ void MockOptionScanner::streamOptionData() {
 void MockOptionScanner::registerAlertCallback(std::shared_ptr<ContractData> cd) {
 	cd->registerAlert([this, cd](std::shared_ptr<CandleTags> ct) {
 		std::lock_guard<std::mutex> lock(optScanMtx);
+
+		// Add underlying specific tags
+		double underlyingPrice = contractChain_->at(1234)->currentPrice();
+		Alerts::PriceDelta pd = contractChain_->at(1234)->priceDelta(ct->getTimeFrame());
+		Alerts::DailyHighsAndLows dhl = contractChain_->at(1234)->dailyHLComparison();
+		Alerts::LocalHighsAndLows lhl = contractChain_->at(1234)->localHLComparison();
+		Alerts::RelativeToMoney rtm = distFromPrice(cd->optType(), cd->strikePrice(), underlyingPrice);
+		
+		ct->addUnderlyingTags(rtm, pd, dhl, lhl);
 		// Send to dbm
 		//std::cout << "Sending to DBM" << std::endl;
 		if (useDBM) dbm->addToInsertionQueue(ct);

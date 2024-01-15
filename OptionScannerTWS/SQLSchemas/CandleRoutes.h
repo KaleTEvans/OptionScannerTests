@@ -17,6 +17,11 @@ namespace OptionDB {
 		nanodbc::execute(conn, "DROP TABLE IF EXISTS UnixValues");
 	}
 
+
+	// ==========================================
+	// Need to make optionscanner functions to update SPX tags
+	// create separate tag functions file
+
 	namespace UnixTable {
 		inline void setTable(nanodbc::connection conn) {
 			try {

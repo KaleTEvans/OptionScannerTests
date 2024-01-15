@@ -24,8 +24,7 @@ std::shared_ptr<Candle> createNewBars(int id, int increment, const vector<std::s
 }
 
 ContractData::ContractData(TickerId reqId, std::unique_ptr<Candle> initData) : 
-	contractId_{reqId}, dailyHigh_{ 0 }, dailyLow_{ 10000 }, localHigh_{ 0 }, localLow_{ 10000 }, tempHigh_{ 0 }, tempLow_{ 10000 },
-	nearDailyHigh{ false }, nearDailyLow{ false }, nearLocalHigh{ false }, nearLocalLow{ false }
+	contractId_{reqId}, dailyHigh_{ 0 }, dailyLow_{ 10000 }, localHigh_{ 0 }, localLow_{ 10000 }, tempHigh_{ 0 }, tempLow_{ 10000 }
 {
 	// Push the first candle only in the 5 sec array
 	std::shared_ptr<Candle> initCandle{ std::move(initData) };
@@ -40,9 +39,11 @@ ContractData::ContractData(TickerId reqId, std::unique_ptr<Candle> initData) :
 	else {
 		if (initCandle->reqId() % 5 == 0) {
 			optType_ = Alerts::OptionType::Call;
+			strikePrice_ = initCandle->reqId();
 		}
 		else {
 			optType_ = Alerts::OptionType::Put;
+			strikePrice_ = initCandle->reqId() - 1;
 		}
 	}
 }
@@ -158,6 +159,8 @@ void ContractData::updateData(std::unique_ptr<Candle> c) {
 
 // Accessors
 TickerId ContractData::contractId() const { return contractId_; }
+int ContractData::strikePrice() const { return strikePrice_; }
+Alerts::OptionType ContractData::optType() const { return optType_; }
 
 // Time series accessors
 vector<std::shared_ptr<Candle>> ContractData::fiveSecData() const { return fiveSecCandles_; }
@@ -174,7 +177,6 @@ double ContractData::localLow() const { return localLow_; }
 long long ContractData::totalVol() const { return cumulativeVolume_.back().second; }
 
 vector<std::pair<long, long long>> ContractData::volOverTime() const { return cumulativeVolume_; }
-vector<bool> ContractData::highLowComparisons() const { return { nearDailyLow, nearDailyHigh, nearLocalLow, nearLocalHigh }; }
 
 std::shared_ptr<Candle> ContractData::latestCandle(TimeFrame tf) {
 	switch (tf)
@@ -241,7 +243,25 @@ StandardDeviation ContractData::volStDev(TimeFrame tf) {
 	}
 }
 
-VolAndPriceTags ContractData::getVolAndPriceTags() { return VPT_; }
+Alerts::PriceDelta ContractData::priceDelta(TimeFrame tf) {
+	switch (tf)
+	{
+	case TimeFrame::FiveSecs:
+		return VPT_.priceDelta5Sec;
+	case TimeFrame::ThirtySecs:
+		return VPT_.priceDelta30Sec;
+	case TimeFrame::OneMin:
+		return VPT_.priceDelta1Min;
+	case TimeFrame::FiveMin:
+		return VPT_.priceDelta5Min;
+	default:
+		//OPTIONSCANNER_ERROR("Failed to return Volume Standard Deviation Object");
+		return {};
+	}
+}
+
+Alerts::DailyHighsAndLows ContractData::dailyHLComparison() { return DHL_; }
+Alerts::LocalHighsAndLows ContractData::localHLComparison() { return LHL_; }
 
 //==============================================
 // Helper Functions
@@ -333,41 +353,17 @@ void ContractData::updateComparisons() {
 	double lastPrice = fiveSecCandles_.back()->close();
 
 	// Check values against the underlying price, will use 0.1% difference
-	if (isWithinXPercent(lastPrice, dailyHigh_, percentDiff)) {
-		nearDailyHigh = true;
-		DHL_ = Alerts::DailyHighsAndLows::NDH;
-	}
-	else {
-		nearDailyHigh = false;
-		DHL_ = Alerts::DailyHighsAndLows::Inside;
-	}
+	if (isWithinXPercent(lastPrice, dailyHigh_, percentDiff)) DHL_ = Alerts::DailyHighsAndLows::NDH;
+	else DHL_ = Alerts::DailyHighsAndLows::Inside;
 
-	if (isWithinXPercent(lastPrice, dailyLow_, percentDiff)) {
-		nearDailyLow = true;
-		DHL_ = Alerts::DailyHighsAndLows::NDL;
-	}
-	else {
-		nearDailyLow = false;
-		DHL_ = Alerts::DailyHighsAndLows::Inside;
-	}
+	if (isWithinXPercent(lastPrice, dailyLow_, percentDiff)) DHL_ = Alerts::DailyHighsAndLows::NDL;
+	else DHL_ = Alerts::DailyHighsAndLows::Inside;
 
-	if (isWithinXPercent(lastPrice, localHigh_, percentDiff) || lastPrice > localHigh_) {
-		nearLocalHigh = true;
-		LHL_ = Alerts::LocalHighsAndLows::NLH;
-	}
-	else {
-		nearLocalHigh = false;
-		LHL_ = Alerts::LocalHighsAndLows::Inside;
-	}
+	if (isWithinXPercent(lastPrice, localHigh_, percentDiff) || lastPrice > localHigh_) LHL_ = Alerts::LocalHighsAndLows::NLH;
+	else LHL_ = Alerts::LocalHighsAndLows::Inside;
 
-	if (isWithinXPercent(lastPrice, localLow_, percentDiff) || lastPrice < localLow_) {
-		nearLocalLow = true;
-		LHL_ = Alerts::LocalHighsAndLows::NLL;
-	}
-	else {
-		nearLocalLow = false;
-		LHL_ = Alerts::LocalHighsAndLows::Inside;
-	}
+	if (isWithinXPercent(lastPrice, localLow_, percentDiff) || lastPrice < localLow_) LHL_ = Alerts::LocalHighsAndLows::NLL;
+	else LHL_ = Alerts::LocalHighsAndLows::Inside;
 }
 
 void ContractData::updateLocalMinMax(std::shared_ptr<Candle> c) {
@@ -463,4 +459,43 @@ Alerts::VolumeThreshold VolAndPriceTags::updateVolThreshold(long volume) {
 	if (volume >= 1000) return Alerts::VolumeThreshold::Vol1000;
 
 	throw std::invalid_argument("Invalid Volume Value");
+}
+
+Alerts::RelativeToMoney distFromPrice(Alerts::OptionType optType, int strike, double spxPrice) {
+	Alerts::RelativeToMoney rtm;
+
+	double priceDifference = std::abs(spxPrice - static_cast<double>(strike));
+
+	if (spxPrice == strike) {
+		rtm = Alerts::RelativeToMoney::ATM;
+	}
+	else {
+		int strikesOTM = static_cast<int>(std::ceil(priceDifference / 5));
+
+		if (strikesOTM == 1) {
+			if (spxPrice > strike) (optType == Alerts::OptionType::Call) ? rtm = Alerts::RelativeToMoney::OTM1 : rtm = Alerts::RelativeToMoney::ITM1;
+			else (optType == Alerts::OptionType::Call) ? rtm = Alerts::RelativeToMoney::ITM1 : rtm = Alerts::RelativeToMoney::OTM1;
+		}
+		else if (strikesOTM == 2) {
+			if (spxPrice > strike) (optType == Alerts::OptionType::Call) ? rtm = Alerts::RelativeToMoney::OTM2 : rtm = Alerts::RelativeToMoney::ITM2;
+			else (optType == Alerts::OptionType::Call) ? rtm = Alerts::RelativeToMoney::ITM2 : rtm = Alerts::RelativeToMoney::OTM2;
+		}
+		else if (strikesOTM == 3) {
+			if (spxPrice > strike) (optType == Alerts::OptionType::Call) ? rtm = Alerts::RelativeToMoney::OTM3 : rtm = Alerts::RelativeToMoney::ITM3;
+			else (optType == Alerts::OptionType::Call) ? rtm = Alerts::RelativeToMoney::ITM3 : rtm = Alerts::RelativeToMoney::OTM3;
+		}
+		else if (strikesOTM == 4) {
+			if (spxPrice > strike) (optType == Alerts::OptionType::Call) ? rtm = Alerts::RelativeToMoney::OTM4 : rtm = Alerts::RelativeToMoney::ITM4;
+			else (optType == Alerts::OptionType::Call) ? rtm = Alerts::RelativeToMoney::ITM4 : rtm = Alerts::RelativeToMoney::OTM4;
+		}
+		else if (strikesOTM >= 5) {
+			if (spxPrice > strike) (optType == Alerts::OptionType::Call) ? rtm = Alerts::RelativeToMoney::DeepOTM : rtm = Alerts::RelativeToMoney::DeepITM;
+			else (optType == Alerts::OptionType::Call) ? rtm = Alerts::RelativeToMoney::DeepITM : rtm = Alerts::RelativeToMoney::DeepOTM;
+		}
+		else {
+			std::cout << "Error ocurred calculating distance from price" << std::endl;
+		}
+	}
+
+	return rtm;
 }
