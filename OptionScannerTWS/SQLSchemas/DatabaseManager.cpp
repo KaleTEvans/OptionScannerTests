@@ -87,7 +87,10 @@ namespace OptionDB {
 					}
 					else {
 						std::shared_ptr<CandleTags> ct = candleProcessingQueue.front();
-						std::cout << ct->candle.reqId() << " | " << ct->getTimeFrame() << " | " << ct->getOptType() << std::endl;
+						std::cout << ct->candle.reqId() << " | " << ct->getTimeFrame() << " | " << ct->getOptType() << " | " << ct->getTOD() << " | " <<
+							ct->getRTM() << " | " << ct->getVolStDev() << " | " << ct->getVolThresh() << " | "  << ct->getOptPriceDelta() << " | " <<
+							ct->getDHL() << " | " << ct->getLHL() << " | " << ct->getUnderlyingPriceDelta() << " | " << ct->getUnderlyingDHL() 
+							<< " | " << ct->getUnderlyingLHL() << std::endl;
 					}
 					candleProcessingQueue.pop();
 				}
@@ -101,7 +104,7 @@ namespace OptionDB {
 					else {
 						UnderlyingTable::CandleForDB cdb = underlyingQueue.front().first;
 						TimeFrame tf = underlyingQueue.front().second;
-						std::cout << cdb.reqId_ << " | " << tf << std::endl;
+						std::cout << cdb.reqId_ << " | " << tf << " | Underlying" << std::endl;
 					}
 					underlyingQueue.pop();
 

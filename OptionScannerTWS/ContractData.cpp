@@ -425,11 +425,14 @@ void ContractData::updateTimeOfDay(long unixTime) {
 	case 6:
 		tod_ = Alerts::TimeOfDay::Hour6;
 		break;
-	case 8:
+	case 7:
 		tod_ = Alerts::TimeOfDay::Hour7;
 		break;
 	default:
-		std::cout << "Error occured calculating time of day" << std::endl;
+		// std::cout << "Error occured calculating time of day" << std::endl;
+	
+		// Use this for testing purposes
+		tod_ = Alerts::TimeOfDay::Hour1;
 		break;
 	}
 }

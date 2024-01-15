@@ -21,7 +21,7 @@ struct Alert {
 class MockOptionScanner {
 public:
 	// Option scanner will share the same constructor and destructor as App
-	MockOptionScanner(int delay);
+	MockOptionScanner(int delay, bool useDBM = false);
 
 	int checkContractMap();
 
@@ -49,6 +49,7 @@ public:
 
 	std::queue<Alert> alertQueue;
 
+	bool useDBM{ false };
 	std::shared_ptr<OptionDB::DatabaseManager> dbm;
 	void waitForDBM();
 

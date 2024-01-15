@@ -12,10 +12,10 @@
 using namespace testing;
 
 
-// Test the generation of 19 different contract requests based on the underlying price
+// Repurposing tests just to confirm tags and candles are being routed properly
 TEST(MockOptionScannerTests, OptionChainGenerationTest) {
 	// Set random generator to generate every 100 miliseconds
-	MockOptionScanner mos(25);
+	MockOptionScanner mos(25, true);
 
 	std::thread t([&] {
 		mos.streamOptionData();

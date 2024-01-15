@@ -11,6 +11,12 @@ using std::string;
 
 namespace OptionDB {
 
+	inline void resetTables(nanodbc::connection conn) {
+		nanodbc::execute(conn, "DROP TABLE IF EXISTS OptionCandles");
+		nanodbc::execute(conn, "DROP TABLE IF EXISTS UnderlyingCandles");
+		nanodbc::execute(conn, "DROP TABLE IF EXISTS UnixValues");
+	}
+
 	namespace UnixTable {
 		inline void setTable(nanodbc::connection conn) {
 			try {
@@ -18,13 +24,14 @@ namespace OptionDB {
 
 				string sql = "CREATE TABLE UnixValues ("
 					"ID INT IDENTITY(1, 1),"
-					"Time INT NOT NULL UNIQUE);";
+					"Time INT NOT NULL,"
+					"UNIQUE(Time)); ";
 
 				nanodbc::execute(conn, sql);
 				std::cout << "Unix Table Initialized" << std::endl;
 			}
 			catch (const std::exception& e) {
-				std::cout << "Error: " << e.what() << std::endl;
+				std::cout << "Unix Table Error: " << e.what() << std::endl;
 			}
 		}
 
@@ -35,9 +42,10 @@ namespace OptionDB {
 
 				stmt.bind(0, &unixTime);
 				stmt.execute();
+				std::cout << "Unix Table Insertion Successful" << std::endl;
 			}
 			catch (const std::exception& e) {
-				std::cout << "Error: " << e.what() << std::endl;
+				std::cout << "Unix Table Error: " << e.what() << std::endl;
 			}
 		}
 
@@ -56,7 +64,7 @@ namespace OptionDB {
 				}
 			}
 			catch (const std::exception& e) {
-				std::cout << "Error: " << e.what() << std::endl;
+				std::cout << "Unix Table Error: " << e.what() << std::endl;
 			}
 
 			return unixValues;
@@ -85,7 +93,7 @@ namespace OptionDB {
 				nanodbc::execute(conn, "DROP TABLE IF EXISTS UnderlyingCandles");
 
 				string sql = "CREATE TABLE UnderlyingCandles ("
-					"ID IDENTITY(1, 1),"
+					"ID INT IDENTITY(1, 1),"
 					"ReqID INT NOT NULL,"
 					"Date VARCHAR(10),"
 					"Time INT NOT NULL,"
@@ -96,13 +104,13 @@ namespace OptionDB {
 					"Volume INT,"
 					"TimeFrame VARCHAR(20) NOT NULL,"
 
-					"FOREIGN KEY Time REFERENCES UnixValues(Time));";
+					"FOREIGN KEY (Time) REFERENCES UnixValues(Time));";
 
 				nanodbc::execute(conn, sql);
 				std::cout << "Underlying Table Initialized" << std::endl;
 			}
 			catch (const std::exception& e) {
-				std::cout << "Error: " << e.what() << std::endl;
+				std::cout << "Underlying Table Error: " << e.what() << std::endl;
 			}
 		}
 
@@ -133,10 +141,11 @@ namespace OptionDB {
 				stmt.bind(8, timeframe.c_str());
 
 				stmt.execute();
+				std::cout << "Underlying candle insertion successful" << std::endl;
 			}
 			catch (const std::exception& e) {
 				//OPTIONSCANNER_ERROR("Error: {}", e.what());
-				std::cout << "Error: " << e.what() << std::endl;
+				std::cout << "Underlying Table Error: " << e.what() << std::endl;
 			}
 		}
 
@@ -169,7 +178,7 @@ namespace OptionDB {
 			}
 			catch (const std::exception& e) {
 				//OPTIONSCANNER_ERROR("Error: {}", e.what());
-				std::cout << "Error: " << e.what() << std::endl;
+				std::cout << "Underlying Table Error: " << e.what() << std::endl;
 			}
 
 			return candles;
@@ -185,7 +194,7 @@ namespace OptionDB {
 				string sql = "CREATE TABLE OptionCandles ("
 					"ID INT IDENTITY(1, 1),"
 					"ReqID INT NOT NULL,"
-					"Date VARCHAR(10),"
+					"Date VARCHAR(20),"
 					"Time INT NOT NULL,"
 					"[Open] DECIMAL(16, 3) NOT NULL,"
 					"[Close] DECIMAL(16, 3) NOT NULL,"
@@ -205,19 +214,19 @@ namespace OptionDB {
 					"UnderlyingDailyHighLow INT NOT NULL,"
 					"UnderlyingLocalHighLow INT NOT NULL,"
 
-					"FOREIGN KEY Time REFERENCES UnixValues(Time),"
-					"FOREIGN KEY TimeFrame REFERENCES AlertTags(TagID),"
-					"FOREIGN KEY OptionType REFERENCES AlertTags(TagID),"
-					"FOREIGN KEY TimeOfDay REFERENCES AlertTags(TagID),"
-					"FOREIGN KEY RelativeToMoney REFERENCES AlertTags(TagID),"
-					"FOREIGN KEY VolumeStDev REFERENCES AlertTags(TagID),"
-					"FOREIGN KEY VolumeThreshold REFERENCES AlertTags(TagID),"
-					"FOREIGN KEY OptPriceDelta REFERENCES AlertTags(TagID),"
-					"FOREIGN KEY DailyHighLow REFERENCES AlertTags(TagID),"
-					"FOREIGN KEY LocalHighLow REFERENCES AlertTags(TagID),"
-					"FOREIGN KEY UnderlyingPriceDelta REFERENCES AlertTags(TagID),"
-					"FOREIGN KEY UnderlyingDailyHighLow REFERENCES AlertTags(TagID),"
-					"FOREIGN KEY UnderlyingLocalHighLow REFERENCES AlertTags(TagID));";
+					"FOREIGN KEY (Time) REFERENCES UnixValues(Time),"
+					"FOREIGN KEY (TimeFrame) REFERENCES AlertTags(TagID),"
+					"FOREIGN KEY (OptionType) REFERENCES AlertTags(TagID),"
+					"FOREIGN KEY (TimeOfDay) REFERENCES AlertTags(TagID),"
+					"FOREIGN KEY (RelativeToMoney) REFERENCES AlertTags(TagID),"
+					"FOREIGN KEY (VolumeStDev) REFERENCES AlertTags(TagID),"
+					"FOREIGN KEY (VolumeThreshold) REFERENCES AlertTags(TagID),"
+					"FOREIGN KEY (OptPriceDelta) REFERENCES AlertTags(TagID),"
+					"FOREIGN KEY (DailyHighLow) REFERENCES AlertTags(TagID),"
+					"FOREIGN KEY (LocalHighLow) REFERENCES AlertTags(TagID),"
+					"FOREIGN KEY (UnderlyingPriceDelta) REFERENCES AlertTags(TagID),"
+					"FOREIGN KEY (UnderlyingDailyHighLow) REFERENCES AlertTags(TagID),"
+					"FOREIGN KEY (UnderlyingLocalHighLow) REFERENCES AlertTags(TagID));";
 
 				nanodbc::execute(conn, sql);
 
@@ -226,7 +235,7 @@ namespace OptionDB {
 			}
 			catch (const std::exception& e) {
 				//OPTIONSCANNER_ERROR("Error: {}", e.what());
-				std::cout << "Error: " << e.what() << std::endl;
+				std::cout << "Set Option Table Error: " << e.what() << std::endl;
 			}
 		}
 
@@ -235,11 +244,12 @@ namespace OptionDB {
 				nanodbc::statement stmt(conn);
 				stmt.prepare("INSERT INTO OptionCandles (ReqID, Date, Time, [Open], [Close], High, Low, Volume, TimeFrame,"
 					"OptionType, TimeOfDay, RelativeToMoney, VolumeStDev, VolumeThreshold, OptPriceDelta, DailyHighLow, LocalHighLow,"
-					"UnderlyingPriceDelta, UnderlyingDailyHighLow, UnderlyingLocalHighLow"
+					"UnderlyingPriceDelta, UnderlyingDailyHighLow, UnderlyingLocalHighLow)"
 					"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
 				int reqId = candle->candle.reqId();
 				string date = candle->candle.date();
+				std::cout << "Date: " << date << std::endl;
 				long time = candle->candle.time();
 				double open = candle->candle.open();
 				double close = candle->candle.close();
@@ -281,10 +291,11 @@ namespace OptionDB {
 				stmt.bind(19, &underlyingLHL);
 
 				stmt.execute();
+				std::cout << "Option candle insertion successful" << std::endl;
 			}
 			catch (const std::exception& e) {
 				//OPTIONSCANNER_ERROR("Error: {}", e.what());
-				std::cout << "Error: " << e.what() << std::endl;
+				std::cout << "Option Table Insertion Error: " << e.what() << std::endl;
 			}
 		}
 
@@ -293,7 +304,7 @@ namespace OptionDB {
 
 			nanodbc::statement stmt(conn);
 
-			stmt.prepare("SELECT * FROM UnderlyingCandles");
+			stmt.prepare("SELECT * FROM OptionCandles");
 
 			try {
 				nanodbc::result res = stmt.execute();
@@ -330,7 +341,7 @@ namespace OptionDB {
 			}
 			catch (const std::exception& e) {
 				//OPTIONSCANNER_ERROR("Error: {}", e.what());
-				std::cout << "Error: " << e.what() << std::endl;
+				std::cout << "Option Table Retreival Error: " << e.what() << std::endl;
 			}
 
 			return candles;

@@ -1,7 +1,7 @@
 //#include "pch.h"
 #include "MockOptionScanner.h"
 
-MockOptionScanner::MockOptionScanner(int delay) : delay_(delay), EC(YW) {
+MockOptionScanner::MockOptionScanner(int delay, bool useDBM) : delay_(delay), useDBM(useDBM), EC(YW) {
 
 	// Request last quote for SPX upon class initiation to get closest option strikes
 	SPX.symbol = "SPX";
@@ -24,7 +24,7 @@ MockOptionScanner::MockOptionScanner(int delay) : delay_(delay), EC(YW) {
 
 	// Start the dbm
 	dbm = std::make_shared<OptionDB::DatabaseManager>(true);
-	dbm->start();
+	if (useDBM) dbm->start();
 
 	//SPX_.initializeOptionRequests(EC, 111);
 
@@ -80,7 +80,7 @@ void MockOptionScanner::streamOptionData() {
 			else {
 				std::shared_ptr<ContractData> cd = std::make_shared<ContractData>(req, std::move(candle));
 
-				if (req == 1234) cd->setupDatabaseManager(dbm);
+				if (req == 1234 && useDBM) cd->setupDatabaseManager(dbm);
 
 				registerAlertCallback(cd);
 				contractChain_->insert({ req, cd });
@@ -106,7 +106,7 @@ void MockOptionScanner::streamOptionData() {
 		EC.cancelRealTimeBars();
 
 		//std::this_thread::sleep_for(std::chrono::milliseconds(100));
-		dbm->stop();
+		if (useDBM) dbm->stop();
 	}
 }
 
@@ -119,7 +119,7 @@ void MockOptionScanner::registerAlertCallback(std::shared_ptr<ContractData> cd) 
 		std::lock_guard<std::mutex> lock(optScanMtx);
 		// Send to dbm
 		//std::cout << "Sending to DBM" << std::endl;
-		dbm->addToInsertionQueue(ct);
+		if (useDBM) dbm->addToInsertionQueue(ct);
 		
 	});
 }
