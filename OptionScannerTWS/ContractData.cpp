@@ -31,7 +31,7 @@ ContractData::ContractData(TickerId reqId, std::unique_ptr<Candle> initData) :
 	fiveSecCandles_.push_back(initCandle);
 
 	// Update the standard deviation class for the first 5 sec candle
-	sdPrice5Sec_.addValue((initCandle->high() / initCandle->low()) - 1);
+	sdPrice5Sec_.addValue(initCandle->high() - initCandle->low());
 	sdVol5Sec_.addValue(initCandle->volume());
 
 	// If reqId is 1234, mark as underlying, otherwise, set option enum
@@ -58,6 +58,7 @@ void ContractData::setupDatabaseManager(std::shared_ptr<OptionDB::DatabaseManage
 // update each time series vector, stdev and mean. The chaining of if statements ensures that
 // each vector has enough values to fill the next timeframe
 void ContractData::updateData(std::unique_ptr<Candle> c) {
+	//std::lock_guard<std::mutex> lock(cdMtx);
 	//============================================================
 	// 5 Second Candle Options
 	// ===========================================================
@@ -276,10 +277,10 @@ void ContractData::updateContainers(std::shared_ptr<Candle> c, TimeFrame tf) {
 	{
 	case TimeFrame::FiveSecs:
 		fiveSecCandles_.push_back(c);
-		sdPrice5Sec_.addValue((c->high() / c->low()) - 1);
+		sdPrice5Sec_.addValue(c->high() - c->low());
 		sdVol5Sec_.addValue(c->volume());
 		
-		priceStDev = sdPrice5Sec_.numStDev((c->high() / c->low()) - 1);
+		priceStDev = sdPrice5Sec_.numStDev(c->high() - c->low());
 		volStDev = sdVol5Sec_.numStDev(c->volume());
 		volume = c->volume();
 
@@ -290,10 +291,10 @@ void ContractData::updateContainers(std::shared_ptr<Candle> c, TimeFrame tf) {
 		break;
 	case TimeFrame::ThirtySecs:
 		thirtySecCandles_.push_back(c);
-		sdPrice30Sec_.addValue((c->high() / c->low()) - 1);
+		sdPrice30Sec_.addValue(c->high() - c->low());
 		sdVol30Sec_.addValue(c->volume());
 
-		priceStDev = sdPrice30Sec_.numStDev((c->high() / c->low()) - 1);
+		priceStDev = sdPrice30Sec_.numStDev(c->high() - c->low());
 		volStDev = sdVol30Sec_.numStDev(c->volume());
 		volume = c->volume();
 
@@ -304,10 +305,10 @@ void ContractData::updateContainers(std::shared_ptr<Candle> c, TimeFrame tf) {
 		break;
 	case TimeFrame::OneMin:
 		oneMinCandles_.push_back(c);
-		sdPrice1Min_.addValue((c->high() / c->low()) - 1);
+		sdPrice1Min_.addValue(c->high() - c->low());
 		sdVol1Min_.addValue(c->volume());
 
-		priceStDev = sdPrice1Min_.numStDev((c->high() / c->low()) - 1);
+		priceStDev = sdPrice1Min_.numStDev(c->high() - c->low());
 		volStDev = sdVol1Min_.numStDev(c->volume());
 		volume = c->volume();
 
@@ -318,10 +319,10 @@ void ContractData::updateContainers(std::shared_ptr<Candle> c, TimeFrame tf) {
 		break;
 	case TimeFrame::FiveMin:
 		fiveMinCandles_.push_back(c);
-		sdPrice5Min_.addValue((c->high() / c->low()) - 1);
+		sdPrice5Min_.addValue(c->high() - c->low());
 		sdVol5Min_.addValue(c->volume());
 
-		priceStDev = sdPrice5Min_.numStDev((c->high() / c->low()) - 1);
+		priceStDev = sdPrice5Min_.numStDev(c->high() - c->low());
 		volStDev = sdVol5Min_.numStDev(c->volume());
 		volume = c->volume();
 
@@ -437,7 +438,7 @@ Alerts::PriceDelta VolAndPriceTags::updatePriceDelta(double priceStDev) {
 	if (priceStDev < 1) return Alerts::PriceDelta::Under1;
 	if (priceStDev >= 1 && priceStDev <= 2) return Alerts::PriceDelta::Under2;
 	if (priceStDev > 2) return Alerts::PriceDelta::Over2;
-
+	std::cout << priceStDev << std::endl;
 	throw std::invalid_argument("Invalid Price Delta");
 }
 

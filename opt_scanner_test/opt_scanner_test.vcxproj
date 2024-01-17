@@ -71,6 +71,7 @@
     <ClCompile Include="..\OptionScannerTWS\libs\nanodbc\nanodbc.cpp" />
     <ClCompile Include="..\OptionScannerTWS\SQLSchemas\DatabaseManager.cpp" />
     <ClCompile Include="BenchmarkTests\benchmarks.cpp" />
+    <ClCompile Include="DatabaseTests\candle_tag_insertion_tests.cpp" />
     <ClCompile Include="DatabaseTests\db_connection_test.cpp" />
     <ClCompile Include="IntegrationTests\alert_handler_tests.cpp">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OptionScannerTWS);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>

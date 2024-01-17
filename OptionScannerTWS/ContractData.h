@@ -158,6 +158,8 @@ private:
 	// For data keeping purposes
 	vector<std::pair<long, long long>> cumulativeVolume_{ 0 };
 
+	std::mutex cdMtx;
+
 	// We will also need to keep a connection open for the underlying price
 	// Will cancel all alerts when an underlying security is being passed through
 	bool isUnderlying_{ false };
