@@ -4,6 +4,11 @@ namespace OptionDB {
 
 	DatabaseManager::DatabaseManager(bool testConfigNoDB) : testConfigNoDB(testConfigNoDB) {
 		if (!testConfigNoDB) conn_ = std::make_shared<nanodbc::connection>(connectToDB());
+		OptionDB::resetTables(*conn_);
+
+		OptionDB::UnixTable::setTable(*conn_);
+		OptionDB::UnderlyingTable::setTable(*conn_);
+		OptionDB::OptionTable::setTable(*conn_);
 	}
 
 	void DatabaseManager::start() {
@@ -81,6 +86,21 @@ namespace OptionDB {
 
 			while (!candleProcessingQueue.empty() || !underlyingQueue.empty()) {
 
+				if (!underlyingQueue.empty()) {
+					long unixTime = underlyingQueue.front().first.time_;
+					if (!testConfigNoDB && underlyingQueue.front().second == TimeFrame::FiveSecs) UnixTable::post(*conn_, unixTime);
+
+					if (!testConfigNoDB) {
+						UnderlyingTable::post(*conn_, underlyingQueue.front().first, underlyingQueue.front().second);
+					}
+					else {
+						UnderlyingTable::CandleForDB cdb = underlyingQueue.front().first;
+						TimeFrame tf = underlyingQueue.front().second;
+						std::cout << cdb.reqId_ << " | " << tf << " | Underlying" << std::endl;
+					}
+					underlyingQueue.pop();
+				}
+
 				if (!candleProcessingQueue.empty()) {
 					if (!testConfigNoDB) {
 						OptionTable::post(*conn_, candleProcessingQueue.front());
@@ -93,22 +113,6 @@ namespace OptionDB {
 							<< " | " << ct->getUnderlyingLHL() << std::endl;
 					}
 					candleProcessingQueue.pop();
-				}
-
-				if (!underlyingQueue.empty()) {
-					long unixTime = underlyingQueue.front().first.time_;
-
-					if (!testConfigNoDB) {
-						UnderlyingTable::post(*conn_, underlyingQueue.front().first, underlyingQueue.front().second);
-					}
-					else {
-						UnderlyingTable::CandleForDB cdb = underlyingQueue.front().first;
-						TimeFrame tf = underlyingQueue.front().second;
-						std::cout << cdb.reqId_ << " | " << tf << " | Underlying" << std::endl;
-					}
-					underlyingQueue.pop();
-
-					if (!testConfigNoDB) UnixTable::post(*conn_, unixTime);
 				}
 			}
 

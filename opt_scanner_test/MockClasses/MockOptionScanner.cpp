@@ -4,13 +4,39 @@
 MockOptionScanner::MockOptionScanner(int delay, bool useDBM) : delay_(delay), useDBM(useDBM), EC(YW) {
 
 	// Request last quote for SPX upon class initiation to get closest option strikes
-	SPX.symbol = "SPX";
+	/*SPX.symbol = "SPX";
 	SPX.secType = "IND";
-	SPX.currency = "USD";
+	SPX.currency = "USD";*/
 
 	EC.setCandleInterval(delay);
 
 	// Create RTB request for SPX underlying **This will not be accessible until buffer is processed
+	/*EC.reqRealTimeBars
+	(1234
+		, SPX
+		, 0
+		, ""
+		, true
+	);*/
+
+	// Add SPX to the added contracts set
+	//addedContracts.push_back(1234);
+
+	// Start the dbm
+	dbm = std::make_shared<OptionDB::DatabaseManager>(false);
+	if (useDBM) dbm->start();
+
+	//SPX_.initializeOptionRequests(EC, 111);
+
+	// Initialzie the contract chain
+	contractChain_ = std::make_shared<std::unordered_map<int, std::shared_ptr<ContractData>>>();
+}
+
+void MockOptionScanner::startUnderlyingStream() {
+	SPX.symbol = "SPX";
+	SPX.secType = "IND";
+	SPX.currency = "USD";
+
 	EC.reqRealTimeBars
 	(1234
 		, SPX
@@ -22,14 +48,7 @@ MockOptionScanner::MockOptionScanner(int delay, bool useDBM) : delay_(delay), us
 	// Add SPX to the added contracts set
 	addedContracts.push_back(1234);
 
-	// Start the dbm
-	dbm = std::make_shared<OptionDB::DatabaseManager>(true);
-	if (useDBM) dbm->start();
-
-	//SPX_.initializeOptionRequests(EC, 111);
-
-	// Initialzie the contract chain
-	contractChain_ = std::make_shared<std::unordered_map<int, std::shared_ptr<ContractData>>>();
+	underlyingStreamStarted = true;
 }
 
 // Test function Accessors
@@ -173,6 +192,7 @@ void MockOptionScanner::updateStrikes(double price) {
 
 	// Empty queue and create the requests
 	while (!contractReqQueue.empty()) {
+		if (!underlyingStreamStarted) startUnderlyingStream();
 		Contract con = contractReqQueue.front();
 
 		int req = 0; // Ends in 0 or 5 if call, 1 or 6 for puts

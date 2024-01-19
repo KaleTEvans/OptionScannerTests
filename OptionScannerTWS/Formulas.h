@@ -29,7 +29,6 @@ public:
         mean_ = sum_ / n;
         variance_ = (sumSq_ - n * mean_ * mean_) / n;
         stdDev_ = std::sqrt(variance_);
-        std::cout << "STDEV: " << stdDev_ << std::endl;
     }
 
     double sum() const { return n; }

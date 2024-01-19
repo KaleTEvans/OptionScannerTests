@@ -9,6 +9,7 @@
 #include <memory>
 #include <queue>
 #include <map>
+#include <unordered_set>
 
 namespace OptionDB {
 

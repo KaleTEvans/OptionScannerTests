@@ -23,6 +23,10 @@ public:
 	// Option scanner will share the same constructor and destructor as App
 	MockOptionScanner(int delay, bool useDBM = false);
 
+	// Functions to synchronize spx times with option times
+	void startUnderlyingStream();
+	bool underlyingStreamStarted{ false };
+
 	int checkContractMap();
 
 	// This function will use several functions provided in App to begin streaming contract data

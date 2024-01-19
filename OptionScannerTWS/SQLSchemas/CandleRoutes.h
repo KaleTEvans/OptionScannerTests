@@ -254,7 +254,6 @@ namespace OptionDB {
 
 				int reqId = candle->candle.reqId();
 				string date = candle->candle.date();
-				std::cout << "Date: " << date << std::endl;
 				long time = candle->candle.time();
 				double open = candle->candle.open();
 				double close = candle->candle.close();

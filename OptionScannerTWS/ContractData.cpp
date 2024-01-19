@@ -76,7 +76,8 @@ void ContractData::updateData(std::unique_ptr<Candle> c) {
 	dailyHigh_ = max(dailyHigh_, fiveSec->high());
 	dailyLow_ = min(dailyLow_, fiveSec->low());
 
-	updateComparisons();
+	// Wait for the first 30 minutes before updating comparisons
+	if (fiveMinCandles_.size() > 360) updateComparisons();
 
 	std::shared_ptr<CandleTags> fiveSecTags = std::make_shared<CandleTags>(fiveSec, TimeFrame::FiveSecs, optType_, tod_,
 		VPT_.volStDev5Sec, VPT_.volThresh5Sec, VPT_.priceDelta5Sec, DHL_, LHL_);

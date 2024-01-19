@@ -56,7 +56,8 @@ void MockClient::reqRealTimeBars(TickerId id, const Contract& contract, int barS
 
     // Get current unix time
     reqCurrentTime();
-    long unixTime = wrapper_.getCurrentTime();
+    // long unixTime = wrapper_.getCurrentTime();
+    long unixTime = 1705693294;
 
     double refPrice = wrapper_.getSPXPrice();
     long refVol = 50000000;
