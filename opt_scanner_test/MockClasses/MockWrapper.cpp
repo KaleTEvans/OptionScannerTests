@@ -14,6 +14,10 @@ std::vector<std::unique_ptr<Candle>> MockCandleBuffer::processBuffer() {
     std::lock_guard<std::mutex> lock(bufferMutex);
     std::vector<std::unique_ptr<Candle>> processedData;
 
+    // Ensure that the underlying is inserted first
+    processedData.push_back(std::move(bufferMap.at(1234)));
+    bufferMap.erase(1234);
+
     for (auto& c : bufferMap) processedData.push_back(std::move(c.second));
     bufferMap.clear();
 
@@ -27,7 +31,6 @@ bool MockCandleBuffer::checkBufferFull() {
     auto currentTime = std::chrono::steady_clock::now();
     auto timePassed = currentTime - bufferTimePassed_;
     if (timePassed > std::chrono::seconds(3)) checkBufferStatus();
-
     //return buffer.size() >= capacity_ && bufferReqs.size() >= capacity_;
     return static_cast<int>(bufferMap.size()) >= capacity_;
 }
@@ -68,7 +71,7 @@ void MockCandleBuffer::checkBufferStatus() {
 // Mock Wrapper
 //=================================================================
 
-MockWrapper::MockWrapper() : mcb{ 19 } { m_done = false; } // Size 19 for 8 calls, 8 puts, and one underlying
+MockWrapper::MockWrapper() : mcb{ 19 } { m_done = false; } // Size 18 for 8 calls, 8 puts
 
 // Getters
 bool MockWrapper::notDone() { return !m_done; }

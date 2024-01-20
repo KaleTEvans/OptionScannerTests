@@ -57,6 +57,7 @@ double MockOptionScanner::currentSPX() { return (currentSPX_); }
 int MockOptionScanner::diffChainSize() { return (curChainSize_ - prevChainSize_); }
 int MockOptionScanner::prevBufferCapacity() { return prevBufferCapacity_; }
 std::vector<int> MockOptionScanner::finalContractCt() { return addedContracts; }
+std::shared_ptr<std::unordered_map<int, std::shared_ptr<ContractData>>> MockOptionScanner::getContractChain() { return contractChain_; }
 
 
 //============================================================
@@ -97,11 +98,16 @@ void MockOptionScanner::streamOptionData() {
 				
 			}
 			else {
-				std::shared_ptr<ContractData> cd = std::make_shared<ContractData>(req, std::move(candle));
-
-				if (req == 1234 && useDBM) cd->setupDatabaseManager(dbm);
+				std::shared_ptr<ContractData> cd;
+				if (req == 1234 && useDBM) {
+					cd = std::make_shared<ContractData>(req, dbm);
+				}
+				else {
+					cd = std::make_shared<ContractData>(req);
+				}
 
 				registerAlertCallback(cd);
+				cd->updateData(std::move(candle));
 				contractChain_->insert({ req, cd });
 			}
 		}
@@ -136,15 +142,20 @@ void MockOptionScanner::streamOptionData() {
 void MockOptionScanner::registerAlertCallback(std::shared_ptr<ContractData> cd) {
 	cd->registerAlert([this, cd](std::shared_ptr<CandleTags> ct) {
 		std::lock_guard<std::mutex> lock(optScanMtx);
+		std::cout << "Callback from: " << ct->candle.reqId() << " At " << ct->candle.time() << std::endl;
 
 		// Add underlying specific tags
-		double underlyingPrice = contractChain_->at(1234)->currentPrice();
-		Alerts::PriceDelta pd = contractChain_->at(1234)->priceDelta(ct->getTimeFrame());
-		Alerts::DailyHighsAndLows dhl = contractChain_->at(1234)->dailyHLComparison();
-		Alerts::LocalHighsAndLows lhl = contractChain_->at(1234)->localHLComparison();
-		Alerts::RelativeToMoney rtm = distFromPrice(cd->optType(), cd->strikePrice(), underlyingPrice);
-		
-		ct->addUnderlyingTags(rtm, pd, dhl, lhl);
+		try {
+			double underlyingPrice = contractChain_->at(1234)->currentPrice();
+			Alerts::PriceDelta pd = contractChain_->at(1234)->priceDelta(ct->getTimeFrame());
+			Alerts::DailyHighsAndLows dhl = contractChain_->at(1234)->dailyHLComparison();
+			Alerts::LocalHighsAndLows lhl = contractChain_->at(1234)->localHLComparison();
+			Alerts::RelativeToMoney rtm = distFromPrice(cd->optType(), cd->strikePrice(), underlyingPrice);
+			ct->addUnderlyingTags(rtm, pd, dhl, lhl);
+		}
+		catch (const std::exception& e) {
+			std::cout << "Issue with callback: " << e.what() << std::endl;
+		}
 		// Send to dbm
 		//std::cout << "Sending to DBM" << std::endl;
 		if (useDBM) dbm->addToInsertionQueue(ct);
@@ -229,6 +240,9 @@ void MockOptionScanner::waitForDBM() {
 		return dbm->processingComplete();
 	});
 }
+
+int MockOptionScanner::getUnderlyingDBCount() { return dbm->getUnderlyingCount(); }
+int MockOptionScanner::getOptionDBCount() { return dbm->getOptionCount(); }
 
 //=====================================================
 // Helper Functions

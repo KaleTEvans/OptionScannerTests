@@ -61,7 +61,9 @@ struct VolAndPriceTags {
 
 class ContractData {
 public:
-	ContractData(TickerId reqId, std::unique_ptr<Candle> initData);
+	ContractData(TickerId reqId);
+	// Constructor for underlying with dbm connection
+	ContractData(TickerId reqId, std::shared_ptr<OptionDB::DatabaseManager> dbm);
 
 	// Set the sql connection variable if pushing to db
 	void setupDatabaseManager(std::shared_ptr<OptionDB::DatabaseManager> dbm);

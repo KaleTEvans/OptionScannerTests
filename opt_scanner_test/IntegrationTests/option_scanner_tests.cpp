@@ -22,13 +22,37 @@ TEST(MockOptionScannerTests, OptionChainGenerationTest) {
 		});
 
 	// New SPX price is used to update strikes every 100 miliseconds, so only sleep a short amount of time
-	std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+	std::this_thread::sleep_for(std::chrono::milliseconds(3000));
 
 	mos.YW.setmDone(true);
 	if (t.joinable()) t.join();
 	mos.waitForDBM();
 
-	//EXPECT_EQ(19, mos.checkContractMap());
+	int underlyingCandleCt = mos.getUnderlyingDBCount();
+	int optionCandleCt = mos.getOptionDBCount();
+
+	std::shared_ptr<std::unordered_map<int, std::shared_ptr<ContractData>>> contractChain = mos.getContractChain();
+
+	int underlyingChainCt = 0;
+	underlyingChainCt += contractChain->at(1234)->fiveSecData().size();
+	underlyingChainCt += contractChain->at(1234)->thirtySecData().size();
+	underlyingChainCt += contractChain->at(1234)->oneMinData().size();
+	underlyingChainCt += contractChain->at(1234)->fiveMinData().size();
+
+	EXPECT_EQ(underlyingCandleCt, underlyingChainCt);
+
+	int optionChainCt = 0;
+	for (auto& i : *contractChain) {
+		if (i.first != 1234) {
+			std::cout << i.first << std::endl;
+			optionChainCt += i.second->fiveSecData().size();
+			optionChainCt += i.second->thirtySecData().size();
+			optionChainCt += i.second->oneMinData().size();
+			optionChainCt += i.second->fiveMinData().size();
+		}
+	}
+
+	EXPECT_EQ(optionCandleCt, optionChainCt);
 }
 
 // Output test to ensure updates are made with mutexes and condition variables in place

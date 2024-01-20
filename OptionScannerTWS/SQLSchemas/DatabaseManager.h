@@ -24,6 +24,9 @@ namespace OptionDB {
 		void addToInsertionQueue(std::shared_ptr<CandleTags> ct);
 		void addToInsertionQueue(std::shared_ptr<Candle> c, TimeFrame tf);
 
+		int getUnderlyingCount();
+		int getOptionCount();
+
 		void setCandleTables();
 		void setAlertTables();
 
@@ -47,5 +50,8 @@ namespace OptionDB {
 		// Processing containers
 		std::queue<std::pair<UnderlyingTable::CandleForDB, TimeFrame>> underlyingQueue;
 		std::queue<std::shared_ptr<CandleTags>> candleProcessingQueue;
+
+		// Keeps track of each time increment
+		std::unordered_set<long> timeSet;
 	};
 }

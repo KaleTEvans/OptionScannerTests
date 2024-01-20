@@ -39,7 +39,8 @@ TEST(ContractDataTests, updateDataTest) {
 	long long totalVol = data[0]->volume();
 
 	TickerId reqId = data[0]->reqId();
-	ContractData cd(reqId, std::move(data[0]));
+	ContractData cd(reqId);
+	cd.updateData(std::move(data[0]));
 
 	EXPECT_EQ(cd.contractId(), 1234);
 

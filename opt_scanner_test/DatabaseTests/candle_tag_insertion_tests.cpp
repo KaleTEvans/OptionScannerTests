@@ -32,7 +32,8 @@ TEST(TagInsertionTests, TagAccuracy) {
 	long uTime = time;
 
 	std::unique_ptr<Candle> c1 = std::make_unique<Candle>(1234, uTime, 4800, uHigh1, uLow1, 4804, 0);
-	ContractData cd(1234, std::move(c1));
+	ContractData cd(1234);
+	cd.updateData(std::move(c1));
 
 	// Create 720 Candles for an hour of data
 	for (int i = 1; i <= 720; i++) {

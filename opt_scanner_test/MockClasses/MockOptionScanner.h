@@ -43,6 +43,7 @@ public:
 	int diffChainSize();
 	int prevBufferCapacity();
 	std::vector<int> finalContractCt();
+	std::shared_ptr<std::unordered_map<int, std::shared_ptr<ContractData>>> getContractChain();
 
 	MockClient EC;
 	MockWrapper YW;
@@ -56,6 +57,9 @@ public:
 	bool useDBM{ false };
 	std::shared_ptr<OptionDB::DatabaseManager> dbm;
 	void waitForDBM();
+
+	int getUnderlyingDBCount();
+	int getOptionDBCount();
 
 private:
 	Contract SPX; // Contract to be monitored

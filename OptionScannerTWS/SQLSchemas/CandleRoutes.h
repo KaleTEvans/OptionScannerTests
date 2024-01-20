@@ -47,7 +47,7 @@ namespace OptionDB {
 
 				stmt.bind(0, &unixTime);
 				stmt.execute();
-				std::cout << "Unix Table Insertion Successful" << std::endl;
+				//std::cout << "Unix Table Insertion Successful" << std::endl;
 			}
 			catch (const std::exception& e) {
 				std::cout << "Unix Table Error: " << e.what() << std::endl;
@@ -146,7 +146,7 @@ namespace OptionDB {
 				stmt.bind(8, timeframe.c_str());
 
 				stmt.execute();
-				std::cout << "Underlying candle insertion successful" << std::endl;
+				//std::cout << "Underlying candle insertion successful" << std::endl;
 			}
 			catch (const std::exception& e) {
 				//OPTIONSCANNER_ERROR("Error: {}", e.what());
@@ -187,6 +187,15 @@ namespace OptionDB {
 			}
 
 			return candles;
+		}
+
+		inline int candleCount(nanodbc::connection conn) {
+			nanodbc::statement stmt(conn);
+
+			stmt.prepare("SELECT COUNT(*) FROM UnderlyingCandles");
+			nanodbc::result res = stmt.execute();
+			res.next();
+			return res.get<int>(0);
 		}
 	}
 
@@ -295,11 +304,12 @@ namespace OptionDB {
 				stmt.bind(19, &underlyingLHL);
 
 				stmt.execute();
-				std::cout << "Option candle insertion successful" << std::endl;
+				//std::cout << "Option candle insertion successful" << std::endl;
 			}
 			catch (const std::exception& e) {
 				//OPTIONSCANNER_ERROR("Error: {}", e.what());
 				std::cout << "Option Table Insertion Error: " << e.what() << std::endl;
+				std::cout << "Time of candle: " << candle->candle.time() << std::endl;
 			}
 		}
 
@@ -349,6 +359,15 @@ namespace OptionDB {
 			}
 
 			return candles;
+		}
+
+		inline int candleCount(nanodbc::connection conn) {
+			nanodbc::statement stmt(conn);
+
+			stmt.prepare("SELECT COUNT(*) FROM OptionCandles");
+			nanodbc::result res = stmt.execute();
+			res.next();
+			return res.get<int>(0);
 		}
 	}
 }

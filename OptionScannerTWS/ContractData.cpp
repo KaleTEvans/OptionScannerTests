@@ -23,29 +23,37 @@ std::shared_ptr<Candle> createNewBars(int id, int increment, const vector<std::s
 	return candle;
 }
 
-ContractData::ContractData(TickerId reqId, std::unique_ptr<Candle> initData) : 
+ContractData::ContractData(TickerId reqId) : 
 	contractId_{reqId}, dailyHigh_{ 0 }, dailyLow_{ 10000 }, localHigh_{ 0 }, localLow_{ 10000 }, tempHigh_{ 0 }, tempLow_{ 10000 }
 {
 	// Push the first candle only in the 5 sec array
-	std::shared_ptr<Candle> initCandle{ std::move(initData) };
-	fiveSecCandles_.push_back(initCandle);
+	//std::shared_ptr<Candle> initCandle{ std::move(initData) };
+	//fiveSecCandles_.push_back(initCandle);
 
-	// Update the standard deviation class for the first 5 sec candle
-	sdPrice5Sec_.addValue(initCandle->high() - initCandle->low());
-	sdVol5Sec_.addValue(initCandle->volume());
+	//// Update the standard deviation class for the first 5 sec candle
+	//sdPrice5Sec_.addValue(initCandle->high() - initCandle->low());
+	//sdVol5Sec_.addValue(initCandle->volume());
 
 	// If reqId is 1234, mark as underlying, otherwise, set option enum
-	if (initCandle->reqId() == 1234) isUnderlying_ = true;
+	if (reqId == 1234) isUnderlying_ = true;
 	else {
-		if (initCandle->reqId() % 5 == 0) {
+		if (reqId % 5 == 0) {
 			optType_ = Alerts::OptionType::Call;
-			strikePrice_ = initCandle->reqId();
+			strikePrice_ = reqId;
 		}
 		else {
 			optType_ = Alerts::OptionType::Put;
-			strikePrice_ = initCandle->reqId() - 1;
+			strikePrice_ = reqId;
 		}
 	}
+
+}
+
+ContractData::ContractData(TickerId reqId, std::shared_ptr<OptionDB::DatabaseManager> dbm) : dbm_(dbm),
+contractId_{ reqId }, dailyHigh_{ 0 }, dailyLow_{ 10000 }, localHigh_{ 0 }, localLow_{ 10000 }, tempHigh_{ 0 }, tempLow_{ 10000 }
+{
+	isUnderlying_ = true;
+	setupDatabaseManager(dbm_);
 }
 
 // Initiate the SQL connection variable to add db insertion after each candle created
@@ -66,11 +74,16 @@ void ContractData::updateData(std::unique_ptr<Candle> c) {
 	std::shared_ptr<Candle> fiveSec{ std::move(c) };
 	updateContainers(fiveSec, TimeFrame::FiveSecs);
 
+	std::cout << "CANDLE CREATED: " << fiveSec->reqId() << " " << fiveSec->time() << std::endl;
+
 	// Update time of day tag
 	updateTimeOfDay(fiveSec->time());
 
 	// Post to db
-	if (dbConnect && isUnderlying_) dbm_->addToInsertionQueue(fiveSec, TimeFrame::FiveSecs);
+	if (dbConnect && isUnderlying_) {
+		std::cout << "Sending underlying to db" << std::endl;
+		dbm_->addToInsertionQueue(fiveSec, TimeFrame::FiveSecs);
+	}
 
 	// Update daily high and low values to check relative price
 	dailyHigh_ = max(dailyHigh_, fiveSec->high());

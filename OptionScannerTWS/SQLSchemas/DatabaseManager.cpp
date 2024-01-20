@@ -57,6 +57,9 @@ namespace OptionDB {
 		underlyingQueue.push({ candle, tf });
 	}
 
+	int DatabaseManager::getUnderlyingCount() { return UnderlyingTable::candleCount(*conn_); }
+	int DatabaseManager::getOptionCount() { return OptionTable::candleCount(*conn_); }
+
 	void DatabaseManager::setCandleTables() {
 		UnixTable::setTable(*conn_);
 		UnderlyingTable::setTable(*conn_);
@@ -88,7 +91,10 @@ namespace OptionDB {
 
 				if (!underlyingQueue.empty()) {
 					long unixTime = underlyingQueue.front().first.time_;
-					if (!testConfigNoDB && underlyingQueue.front().second == TimeFrame::FiveSecs) UnixTable::post(*conn_, unixTime);
+					if (timeSet.find(unixTime) == timeSet.end()) {
+						timeSet.insert(unixTime);
+						if (!testConfigNoDB) UnixTable::post(*conn_, unixTime);
+					}
 
 					if (!testConfigNoDB) {
 						UnderlyingTable::post(*conn_, underlyingQueue.front().first, underlyingQueue.front().second);
@@ -102,6 +108,12 @@ namespace OptionDB {
 				}
 
 				if (!candleProcessingQueue.empty()) {
+					long unixTime = candleProcessingQueue.front()->candle.time();
+					if (timeSet.find(unixTime) == timeSet.end()) {
+						timeSet.insert(unixTime);
+						if (!testConfigNoDB) UnixTable::post(*conn_, unixTime);
+					}
+
 					if (!testConfigNoDB) {
 						OptionTable::post(*conn_, candleProcessingQueue.front());
 					}
