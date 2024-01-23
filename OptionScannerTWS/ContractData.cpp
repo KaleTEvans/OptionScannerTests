@@ -74,7 +74,7 @@ void ContractData::updateData(std::unique_ptr<Candle> c) {
 	std::shared_ptr<Candle> fiveSec{ std::move(c) };
 	updateContainers(fiveSec, TimeFrame::FiveSecs);
 
-	std::cout << "CANDLE CREATED: " << fiveSec->reqId() << " " << fiveSec->time() << std::endl;
+	//std::cout << "CANDLE CREATED: " << fiveSec->reqId() << " " << fiveSec->time() << std::endl;
 
 	// Update time of day tag
 	updateTimeOfDay(fiveSec->time());

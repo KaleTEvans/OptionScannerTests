@@ -22,10 +22,9 @@
 #include <map>
 
 #include "../Enums.h"
-#include "AlertTags.h"
+#include "../Candle.h"
 #include "../tWrapper.h"
 #include "../ContractData.h"
-#include "Logger.h"
 
 using std::cout;
 using std::endl;
@@ -35,14 +34,10 @@ using std::string;
 namespace Alerts {
 
 	struct Alert {
-		int reqId;
-		int strike;
-		double currentPrice;
-		TimeFrame tf;
+		std::shared_ptr<CandleTags> ct;
 		std::chrono::steady_clock::time_point initTime;
-		long unixTime;
 
-		Alert(int reqId, int strike, double currentPrice, long unixTIme, TimeFrame tf);
+		Alert(std::shared_ptr<CandleTags> candle);
 	};
 
 	class AlertHandler {
@@ -51,8 +46,7 @@ namespace Alerts {
 		AlertHandler(std::shared_ptr<std::unordered_map<int, std::shared_ptr<ContractData>>> contractMap);
 		//~AlertHandler();
 
-		void inputAlert(TimeFrame tf, std::shared_ptr<ContractData> cd,
-			std::shared_ptr<ContractData> SPX, std::shared_ptr<Candle> candle);
+		void inputAlert(std::shared_ptr<CandleTags> candle);
 
 		// **** Be sure to take into account alerts right before close
 		void checkAlertOutcomes();
@@ -66,7 +60,7 @@ namespace Alerts {
 		std::thread alertCheckThread_;
 
 		// std::unordered_map<int, AlertNode> alertStorage;
-		std::queue<std::pair<AlertTags, Alert>> alertUpdateQueue;
+		std::queue<Alert> alertUpdateQueue;
 		// This will store all alert data and stats
 		std::unique_ptr<AlertTagStats> alertTagStats;
 
@@ -74,16 +68,6 @@ namespace Alerts {
 		std::shared_ptr<std::unordered_map<int, std::shared_ptr<ContractData>>> contractMap_;
 	};
 
-	//========================================================
-	// Helper Functions
-	//========================================================
-
-	// Get num strikes ITM or OTM
-	RelativeToMoney distFromPrice(OptionType optType, int strike, double spxPrice);
-	// Return the time of day during market hours 1-7
-	TimeOfDay getCurrentHourSlot(long unixTime = 0);
-	// Get proximity to min and max price values
-	std::pair<DailyHighsAndLows, LocalHighsAndLows> getHighsAndLows(vector<bool> comparisons);
 	// Measure the win rate and the percent win of each alert
 	std::pair<double, double> checkWinStats(std::vector<std::shared_ptr<Candle>> prevCandles, Alert a);
 

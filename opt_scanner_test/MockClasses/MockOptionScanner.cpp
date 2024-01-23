@@ -142,7 +142,7 @@ void MockOptionScanner::streamOptionData() {
 void MockOptionScanner::registerAlertCallback(std::shared_ptr<ContractData> cd) {
 	cd->registerAlert([this, cd](std::shared_ptr<CandleTags> ct) {
 		std::lock_guard<std::mutex> lock(optScanMtx);
-		std::cout << "Callback from: " << ct->candle.reqId() << " At " << ct->candle.time() << std::endl;
+		//std::cout << "Callback from: " << ct->candle.reqId() << " At " << ct->candle.time() << std::endl;
 
 		// Add underlying specific tags
 		try {

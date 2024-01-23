@@ -23,7 +23,7 @@ namespace OptionDB {
 		stopInsertion = true;
 
 		// Notify the cv in casse the insertion thread is wating
-		cv.notify_all();
+		//cv.notify_all();
 
 		if (dbInsertionThread.joinable()) dbInsertionThread.join();
 
@@ -33,14 +33,14 @@ namespace OptionDB {
 	bool DatabaseManager::processingComplete() const { return processingComplete_; }
 
 	void DatabaseManager::addToInsertionQueue(std::shared_ptr<CandleTags> ct) {
-		//std::unique_lock<std::mutex> lock(queueMtx);
-		//std::cout << "Received CandleTags" << std::endl;
-		candleProcessingQueue.push(ct);
+		//std::cout << "Incoming Candle Time: " << ct->candle.time() << std::endl;
+		//candleQueue[ct->candle.time()].push(ct);
+		candlePriorityQueue.push(ct);
 	}
 
 	void DatabaseManager::addToInsertionQueue(std::shared_ptr<Candle> c, TimeFrame tf) {
-		//std::unique_lock<std::mutex> lock(queueMtx);
-		//std::cout << "Received Underlying" << std::endl;
+		std::unique_lock<std::mutex> lock(queueMtx);
+		std::cout << "Received Underlying Time" << c->time() << std::endl;
 		
 		// Copy data into underlyingQueue for insertion
 		UnderlyingTable::CandleForDB candle(
@@ -76,62 +76,47 @@ namespace OptionDB {
 	void DatabaseManager::candleInsertionLoop() {
 
 		while (true) {
-			std::unique_lock<std::mutex> lock(queueMtx);
-			// wait for data or exit signal
-			cv.wait(lock, [this]() {
-				return !candleProcessingQueue.empty() || !underlyingQueue.empty() || stopInsertion;
-			});
 
-			// Exit if there is no more data to be processed 
-			if (stopInsertion && candleProcessingQueue.empty() && underlyingQueue.empty()) break;
+			while (!underlyingQueue.empty() && !candlePriorityQueue.empty()) {
+				static long prevUnixTime = -1;
+				static bool unixTimeUpdated = false;
 
-			lock.unlock();
-
-			while (!candleProcessingQueue.empty() || !underlyingQueue.empty()) {
+				std::vector<std::shared_ptr<CandleTags>> optionBatch;
 
 				if (!underlyingQueue.empty()) {
+					std::cout << "Current Underlying Queue Size: " << underlyingQueue.size() << std::endl;
 					long unixTime = underlyingQueue.front().first.time_;
-					if (timeSet.find(unixTime) == timeSet.end()) {
-						timeSet.insert(unixTime);
-						if (!testConfigNoDB) UnixTable::post(*conn_, unixTime);
-					}
+					std::cout << "Current Unix Time: " << unixTime << std::endl;
 
-					if (!testConfigNoDB) {
-						UnderlyingTable::post(*conn_, underlyingQueue.front().first, underlyingQueue.front().second);
-					}
-					else {
-						UnderlyingTable::CandleForDB cdb = underlyingQueue.front().first;
-						TimeFrame tf = underlyingQueue.front().second;
-						std::cout << cdb.reqId_ << " | " << tf << " | Underlying" << std::endl;
-					}
+					std::unique_lock<std::mutex> lock(queueMtx);
+					prevUnixTime = OptionDB::UnixTable::post(*conn_, unixTime);
+					unixTimeUpdated = true;
+					lock.unlock();
+
+					OptionDB::UnderlyingTable::post(*conn_, underlyingQueue.front().first, underlyingQueue.front().second);
 					underlyingQueue.pop();
 				}
 
-				if (!candleProcessingQueue.empty()) {
-					long unixTime = candleProcessingQueue.front()->candle.time();
-					if (timeSet.find(unixTime) == timeSet.end()) {
-						timeSet.insert(unixTime);
-						if (!testConfigNoDB) UnixTable::post(*conn_, unixTime);
+				// Give time for insertion to complete
+				// std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+
+				if (!candlePriorityQueue.empty() && unixTimeUpdated) {
+					while (!candlePriorityQueue.empty() && candlePriorityQueue.top()->candle.time() <= prevUnixTime) {
+						std::shared_ptr<CandleTags> ct = candlePriorityQueue.top();
+						optionBatch.push_back(ct);
+						candlePriorityQueue.pop();
 					}
 
-					if (!testConfigNoDB) {
-						OptionTable::post(*conn_, candleProcessingQueue.front());
-					}
-					else {
-						std::shared_ptr<CandleTags> ct = candleProcessingQueue.front();
-						std::cout << ct->candle.reqId() << " | " << ct->getTimeFrame() << " | " << ct->getOptType() << " | " << ct->getTOD() << " | " <<
-							ct->getRTM() << " | " << ct->getVolStDev() << " | " << ct->getVolThresh() << " | "  << ct->getOptPriceDelta() << " | " <<
-							ct->getDHL() << " | " << ct->getLHL() << " | " << ct->getUnderlyingPriceDelta() << " | " << ct->getUnderlyingDHL() 
-							<< " | " << ct->getUnderlyingLHL() << std::endl;
-					}
-					candleProcessingQueue.pop();
+					unixTimeUpdated = false;
 				}
+
+				if (optionBatch.size() > 0) OptionDB::OptionTable::post(*conn_, optionBatch);
+				optionBatch.clear();
 			}
 
 			// Re-check stop-insertion after processing
 			if (stopInsertion) {
-				std::unique_lock<std::mutex> relock(queueMtx);
-				if (candleProcessingQueue.empty() && underlyingQueue.empty()) break;
+				if (underlyingQueue.empty() && candlePriorityQueue.empty()) break;
 			}
 		}
 

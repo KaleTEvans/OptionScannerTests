@@ -40,14 +40,60 @@ namespace OptionDB {
 			}
 		}
 
-		inline void post(nanodbc::connection conn, long unixTime) {
+		inline long post(nanodbc::connection conn, long unixTime) {
+			long maxUnixTime = -1;
 			try {
 				nanodbc::statement stmt(conn);
 				stmt.prepare("INSERT INTO UnixValues (Time) VALUES (?)");
 
 				stmt.bind(0, &unixTime);
 				stmt.execute();
-				//std::cout << "Unix Table Insertion Successful" << std::endl;
+				std::cout << "Unix Table Insertion Successful" << std::endl;
+
+				nanodbc::statement maxTimeStmt(conn);
+				maxTimeStmt.prepare("SELECT MAX(Time) FROM UnixValues;");
+				auto result = maxTimeStmt.execute();
+				if (result.next()) {
+					maxUnixTime = result.get<long>(0);
+					std::cout << "Max Unix Time: " << maxUnixTime << std::endl;
+				}
+			}
+			catch (const std::exception& e) {
+				std::cout << "Unix Table Error: " << e.what() << std::endl;
+			}
+
+			return maxUnixTime;
+		}
+
+		inline void post(nanodbc::connection conn) {
+			try {
+				nanodbc::execute(conn, "DROP TABLE IF EXISTS TestTable");
+				string sql = "CREATE TABLE TestTable ("
+					"ID INT IDENTITY(1, 1),"
+					"Time DECIMAL(10, 3) NOT NULL,"
+					"Let VARCHAR(10) NOT NULL,"
+					"UNIQUE(Time)); ";
+
+				nanodbc::execute(conn, sql);
+				nanodbc::statement stmt(conn);
+				nanodbc::prepare(stmt, "INSERT INTO TestTable (Time, Let) VALUES (?, ?)");
+
+				std::vector<double> values;
+				std::vector<string> let;
+
+				for (int i = 0; i < 1000; i++) {
+
+					double a = i + 0.043;
+					string b = "0" + std::to_string(i) + "0";
+					values.push_back(a);
+					let.push_back(b);
+				}
+
+				size_t batch = values.size();
+
+				stmt.bind(0, values.data(), batch);
+				stmt.bind_strings(1, let);
+				nanodbc::transact(stmt, batch);
 			}
 			catch (const std::exception& e) {
 				std::cout << "Unix Table Error: " << e.what() << std::endl;
@@ -121,6 +167,7 @@ namespace OptionDB {
 
 		inline void post(nanodbc::connection conn, CandleForDB& candle, TimeFrame tf) {
 			try {
+
 				nanodbc::statement stmt(conn);
 				stmt.prepare("INSERT INTO UnderlyingCandles (ReqID, Date, Time, [Open], [Close], High, Low, Volume, TimeFrame)"
 					"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
@@ -146,7 +193,7 @@ namespace OptionDB {
 				stmt.bind(8, timeframe.c_str());
 
 				stmt.execute();
-				//std::cout << "Underlying candle insertion successful" << std::endl;
+				std::cout << "Underlying insertion successful" << std::endl;
 			}
 			catch (const std::exception& e) {
 				//OPTIONSCANNER_ERROR("Error: {}", e.what());
@@ -210,10 +257,10 @@ namespace OptionDB {
 					"ReqID INT NOT NULL,"
 					"Date VARCHAR(20),"
 					"Time INT NOT NULL,"
-					"[Open] DECIMAL(16, 3) NOT NULL,"
-					"[Close] DECIMAL(16, 3) NOT NULL,"
-					"High DECIMAL(16, 3) NOT NULL,"
-					"Low DECIMAL(16, 3) NOT NULL,"
+					"[Open] DECIMAL(5, 3) NOT NULL,"
+					"[Close] DECIMAL(5, 3) NOT NULL,"
+					"High DECIMAL(5, 3) NOT NULL,"
+					"Low DECIMAL(5, 3) NOT NULL,"
 					"Volume INT NOT NULL,"
 					"TimeFrame INT NOT NULL,"
 					"OptionType INT NOT NULL,"
@@ -253,63 +300,93 @@ namespace OptionDB {
 			}
 		}
 
-		inline void post(nanodbc::connection conn, std::shared_ptr<CandleTags> candle) {
+		inline void post(nanodbc::connection conn, std::vector<std::shared_ptr<CandleTags>> candle) {
 			try {
 				nanodbc::statement stmt(conn);
+
 				stmt.prepare("INSERT INTO OptionCandles (ReqID, Date, Time, [Open], [Close], High, Low, Volume, TimeFrame,"
 					"OptionType, TimeOfDay, RelativeToMoney, VolumeStDev, VolumeThreshold, OptPriceDelta, DailyHighLow, LocalHighLow,"
 					"UnderlyingPriceDelta, UnderlyingDailyHighLow, UnderlyingLocalHighLow)"
 					"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
-				int reqId = candle->candle.reqId();
-				string date = candle->candle.date();
-				long time = candle->candle.time();
-				double open = candle->candle.open();
-				double close = candle->candle.close();
-				double high = candle->candle.high();
-				double low = candle->candle.low();
-				long volume = candle->candle.volume();
-				int timeFrame = Alerts::TagDBInterface::tagToInt[{time_frame(candle->getTimeFrame()), Alerts::EnumString::tag_category(Alerts::TagCategory::TimeFrame)}];
-				int optionType = Alerts::TagDBInterface::tagToInt[{Alerts::EnumString::option_type(candle->getOptType()), Alerts::EnumString::tag_category(Alerts::TagCategory::OptionType)}];
-				int timeOfDay = Alerts::TagDBInterface::tagToInt[{Alerts::EnumString::time_of_day(candle->getTOD()), Alerts::EnumString::tag_category(Alerts::TagCategory::TimeOfDay)}];
-				int relativeToMoney = Alerts::TagDBInterface::tagToInt[{Alerts::EnumString::relative_to_money(candle->getRTM()), Alerts::EnumString::tag_category(Alerts::TagCategory::RelativeToMoney)}];
-				int volumeStDev = Alerts::TagDBInterface::tagToInt[{Alerts::EnumString::vol_st_dev(candle->getVolStDev()), Alerts::EnumString::tag_category(Alerts::TagCategory::VolumeStDev)}];
-				int volumeThreshold = Alerts::TagDBInterface::tagToInt[{Alerts::EnumString::vol_threshold(candle->getVolThresh()), Alerts::EnumString::tag_category(Alerts::TagCategory::VolumeThreshold)}];
-				int optPriceDelta = Alerts::TagDBInterface::tagToInt[{Alerts::EnumString::price_delta(candle->getOptPriceDelta()), Alerts::EnumString::tag_category(Alerts::TagCategory::OptionPriceDelta)}];
-				int dailyHighLow = Alerts::TagDBInterface::tagToInt[{Alerts::EnumString::daily_highs_and_lows(candle->getDHL()), Alerts::EnumString::tag_category(Alerts::TagCategory::OptionDailyHighsAndLows)}];
-				int localHighLow = Alerts::TagDBInterface::tagToInt[{Alerts::EnumString::local_highs_and_lows(candle->getLHL()), Alerts::EnumString::tag_category(Alerts::TagCategory::OptionLocalHighsAndLows)}];
-				int underlyingPriceDelta = Alerts::TagDBInterface::tagToInt[{Alerts::EnumString::price_delta(candle->getUnderlyingPriceDelta()), Alerts::EnumString::tag_category(Alerts::TagCategory::UnderlyingPriceDelta)}];
-				int underlyingDHL = Alerts::TagDBInterface::tagToInt[{Alerts::EnumString::daily_highs_and_lows(candle->getUnderlyingDHL()), Alerts::EnumString::tag_category(Alerts::TagCategory::UnderlyingDailyHighsAndLows)}];
-				int underlyingLHL = Alerts::TagDBInterface::tagToInt[{Alerts::EnumString::local_highs_and_lows(candle->getUnderlyingLHL()), Alerts::EnumString::tag_category(Alerts::TagCategory::UnderlyingLocalHighsAndLows)}];
+				size_t elements = candle.size();
 
-				stmt.bind(0, &reqId);
-				stmt.bind(1, date.c_str());
-				stmt.bind(2, &time);
-				stmt.bind(3, &open);
-				stmt.bind(4, &close);
-				stmt.bind(5, &high);
-				stmt.bind(6, &low);
-				stmt.bind(7, &volume);
-				stmt.bind(8, &timeFrame);
-				stmt.bind(9, &optionType);
-				stmt.bind(10, &timeOfDay);
-				stmt.bind(11, &relativeToMoney);
-				stmt.bind(12, &volumeStDev);
-				stmt.bind(13, &volumeThreshold);
-				stmt.bind(14, &optPriceDelta);
-				stmt.bind(15, &dailyHighLow);
-				stmt.bind(16, &localHighLow);
-				stmt.bind(17, &underlyingPriceDelta);
-				stmt.bind(18, &underlyingDHL);
-				stmt.bind(19, &underlyingLHL);
+				std::vector<int> reqId;
+				std::vector<string> date;
+				std::vector<long> time;
+				std::vector<double> open;
+				std::vector<double> close;
+				std::vector<double> high;
+				std::vector<double> low;
+				std::vector<long> volume;
+				std::vector<int> timeFrame;
+				std::vector<int> optionType;
+				std::vector<int> timeOfDay;
+				std::vector<int> relativeToMoney;
+				std::vector<int> volumeStDev;
+				std::vector<int> volumeThreshold;
+				std::vector<int> optPriceDelta;
+				std::vector<int> dailyHighLow;
+				std::vector<int> localHighLow;
+				std::vector<int> underlyingPriceDelta;
+				std::vector<int> underlyingDHL;
+				std::vector<int> underlyingLHL;
 
-				stmt.execute();
-				//std::cout << "Option candle insertion successful" << std::endl;
+				for (size_t i = 0; i < candle.size(); i++) {
+					reqId.push_back(candle[i]->candle.reqId());
+					date.push_back(candle[i]->candle.date());
+					time.push_back(candle[i]->candle.time());
+					open.push_back(candle[i]->candle.open());
+					close.push_back(candle[i]->candle.close());
+					high.push_back(candle[i]->candle.high());
+					low.push_back(candle[i]->candle.low());
+					volume.push_back(candle[i]->candle.volume());
+					timeFrame.push_back(Alerts::TagDBInterface::tagToInt[{time_frame(candle[i]->getTimeFrame()), Alerts::EnumString::tag_category(Alerts::TagCategory::TimeFrame)}]);
+					optionType.push_back(Alerts::TagDBInterface::tagToInt[{Alerts::EnumString::option_type(candle[i]->getOptType()), Alerts::EnumString::tag_category(Alerts::TagCategory::OptionType)}]);
+					timeOfDay.push_back(Alerts::TagDBInterface::tagToInt[{Alerts::EnumString::time_of_day(candle[i]->getTOD()), Alerts::EnumString::tag_category(Alerts::TagCategory::TimeOfDay)}]);
+					relativeToMoney.push_back(Alerts::TagDBInterface::tagToInt[{Alerts::EnumString::relative_to_money(candle[i]->getRTM()), Alerts::EnumString::tag_category(Alerts::TagCategory::RelativeToMoney)}]);
+					volumeStDev.push_back(Alerts::TagDBInterface::tagToInt[{Alerts::EnumString::vol_st_dev(candle[i]->getVolStDev()), Alerts::EnumString::tag_category(Alerts::TagCategory::VolumeStDev)}]);
+					volumeThreshold.push_back(Alerts::TagDBInterface::tagToInt[{Alerts::EnumString::vol_threshold(candle[i]->getVolThresh()), Alerts::EnumString::tag_category(Alerts::TagCategory::VolumeThreshold)}]);
+					optPriceDelta.push_back(Alerts::TagDBInterface::tagToInt[{Alerts::EnumString::price_delta(candle[i]->getOptPriceDelta()), Alerts::EnumString::tag_category(Alerts::TagCategory::OptionPriceDelta)}]);
+					dailyHighLow.push_back(Alerts::TagDBInterface::tagToInt[{Alerts::EnumString::daily_highs_and_lows(candle[i]->getDHL()), Alerts::EnumString::tag_category(Alerts::TagCategory::OptionDailyHighsAndLows)}]);
+					localHighLow.push_back(Alerts::TagDBInterface::tagToInt[{Alerts::EnumString::local_highs_and_lows(candle[i]->getLHL()), Alerts::EnumString::tag_category(Alerts::TagCategory::OptionLocalHighsAndLows)}]);
+					underlyingPriceDelta.push_back(Alerts::TagDBInterface::tagToInt[{Alerts::EnumString::price_delta(candle[i]->getUnderlyingPriceDelta()), Alerts::EnumString::tag_category(Alerts::TagCategory::UnderlyingPriceDelta)}]);
+					underlyingDHL.push_back(Alerts::TagDBInterface::tagToInt[{Alerts::EnumString::daily_highs_and_lows(candle[i]->getUnderlyingDHL()), Alerts::EnumString::tag_category(Alerts::TagCategory::UnderlyingDailyHighsAndLows)}]);
+					underlyingLHL.push_back(Alerts::TagDBInterface::tagToInt[{Alerts::EnumString::local_highs_and_lows(candle[i]->getUnderlyingLHL()), Alerts::EnumString::tag_category(Alerts::TagCategory::UnderlyingLocalHighsAndLows)}]);
+				}
+
+				stmt.bind(0, reqId.data(), elements);
+				stmt.bind_strings(1, date);
+				stmt.bind(2, time.data(), elements);
+				stmt.bind(3, open.data(), elements);
+				stmt.bind(4, close.data(), elements);
+				stmt.bind(5, high.data(), elements);
+				stmt.bind(6, low.data(), elements);
+				stmt.bind(7, volume.data(), elements);
+				stmt.bind(8, timeFrame.data(), elements);
+				stmt.bind(9, optionType.data(), elements);
+				stmt.bind(10, timeOfDay.data(), elements);
+				stmt.bind(11, relativeToMoney.data(), elements);
+				stmt.bind(12, volumeStDev.data(), elements);
+				stmt.bind(13, volumeThreshold.data(), elements);
+				stmt.bind(14, optPriceDelta.data(), elements);
+				stmt.bind(15, dailyHighLow.data(), elements);
+				stmt.bind(16, localHighLow.data(), elements);
+				stmt.bind(17, underlyingPriceDelta.data(), elements);
+				stmt.bind(18, underlyingDHL.data(), elements);
+				stmt.bind(19, underlyingLHL.data(), elements);
+
+				nanodbc::transact(stmt, elements);
+
+				//res.next();
+				//int lastId = res.get<int>(0);
+				//candle->setSqlId(lastId);
+				//std::cout << "Last Inserted ID: " << lastId << std::endl;
 			}
-			catch (const std::exception& e) {
+			catch (const nanodbc::database_error& e) {
 				//OPTIONSCANNER_ERROR("Error: {}", e.what());
 				std::cout << "Option Table Insertion Error: " << e.what() << std::endl;
-				std::cout << "Time of candle: " << candle->candle.time() << std::endl;
+				//std::cout << "Time of candle: " << candle->candle.time() << std::endl;
 			}
 		}
 
@@ -368,6 +445,17 @@ namespace OptionDB {
 			nanodbc::result res = stmt.execute();
 			res.next();
 			return res.get<int>(0);
+		}
+	}
+
+	namespace CandlePerformance {
+
+		inline void setTable(nanodbc::connection conn) {
+			nanodbc::execute(conn, "DROP TABLE IF EXISTS CandlePerformance");
+
+			string sql = "CREATE TABLE CandlePerformance {"
+				"PerformanceID INT IDENTITY(1, 1) PRIMARY KEY,"
+				"CandleID INT,";
 		}
 	}
 }

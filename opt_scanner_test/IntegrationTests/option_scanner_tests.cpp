@@ -15,14 +15,14 @@ using namespace testing;
 // Repurposing tests just to confirm tags and candles are being routed properly
 TEST(MockOptionScannerTests, OptionChainGenerationTest) {
 	// Set random generator to generate every 100 miliseconds
-	MockOptionScanner mos(25, true);
+	MockOptionScanner mos(1000, true);
 
 	std::thread t([&] {
 		mos.streamOptionData();
 		});
 
 	// New SPX price is used to update strikes every 100 miliseconds, so only sleep a short amount of time
-	std::this_thread::sleep_for(std::chrono::milliseconds(3000));
+	std::this_thread::sleep_for(std::chrono::milliseconds(10000));
 
 	mos.YW.setmDone(true);
 	if (t.joinable()) t.join();
@@ -44,7 +44,7 @@ TEST(MockOptionScannerTests, OptionChainGenerationTest) {
 	int optionChainCt = 0;
 	for (auto& i : *contractChain) {
 		if (i.first != 1234) {
-			std::cout << i.first << std::endl;
+			//std::cout << i.first << std::endl;
 			optionChainCt += i.second->fiveSecData().size();
 			optionChainCt += i.second->thirtySecData().size();
 			optionChainCt += i.second->oneMinData().size();

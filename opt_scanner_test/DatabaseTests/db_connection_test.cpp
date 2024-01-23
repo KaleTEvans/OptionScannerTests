@@ -25,7 +25,7 @@ TEST(DBTests, candleTables) {
 	long time = static_cast<long>(unixTime);
 	std::cout << "TIME: " << time << std::endl;
 
-	OptionDB::UnixTable::post(conn, time);
+	//OptionDB::UnixTable::post(conn, time);
 
 	OptionDB::OptionTable::setTable(conn);
 
@@ -37,14 +37,14 @@ TEST(DBTests, candleTables) {
 	ct->addUnderlyingTags(Alerts::RelativeToMoney::ITM1, Alerts::PriceDelta::Over2,
 		Alerts::DailyHighsAndLows::Inside, Alerts::LocalHighsAndLows::NLH);
 
-	OptionDB::OptionTable::post(conn, ct);
+	//OptionDB::OptionTable::post(conn, ct);
 
 	OptionDB::UnderlyingTable::setTable(conn);
 
 	std::string date = c->date();
 
 	OptionDB::UnderlyingTable::CandleForDB underlying(1234, date, time, 4800.05, 4810, 4750, 4790, 0);
-	OptionDB::UnderlyingTable::post(conn, underlying, TimeFrame::FiveSecs);
+	//OptionDB::UnderlyingTable::post(conn, underlying, TimeFrame::FiveSecs);
 
 	// Sleep for a bit and then begin retrieving data
 	std::this_thread::sleep_for(std::chrono::milliseconds(100));
